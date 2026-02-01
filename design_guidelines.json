@@ -1,0 +1,168 @@
+{
+  "identity": {
+    "name": "Songon Extension",
+    "persona": "E1: The Anti-AI Designer",
+    "tone": "Premium, Nature-Connected, Professional, Trustworthy",
+    "theme_mode": "dark",
+    "visual_style": "Nature-Dark Luxury"
+  },
+  "typography": {
+    "headings": {
+      "family": "Playfair Display, serif",
+      "usage": "Hero titles, Section headers, Feature names",
+      "weights": ["400", "600", "700"],
+      "letter_spacing": "tracking-tight"
+    },
+    "body": {
+      "family": "Montserrat, sans-serif",
+      "usage": "Data points, Descriptions, UI elements, Tooltips",
+      "weights": ["400", "500", "600"],
+      "letter_spacing": "tracking-normal"
+    }
+  },
+  "colors": {
+    "palette": {
+      "background": {
+        "default": "#050a07",
+        "paper": "#0d1410",
+        "subtle": "#1a2620"
+      },
+      "primary": {
+        "main": "#4ade80",
+        "hover": "#22c55e",
+        "foreground": "#000000"
+      },
+      "secondary": {
+        "main": "#eab308",
+        "foreground": "#000000"
+      },
+      "accent": {
+        "main": "#10b981",
+        "subtle": "rgba(16, 185, 129, 0.1)"
+      },
+      "status": {
+        "available": "#22c55e",
+        "option": "#f97316",
+        "sold": "#ef4444"
+      },
+      "text": {
+        "primary": "#f0fdf4",
+        "secondary": "#86efac",
+        "muted": "#4b5563"
+      },
+      "border": {
+        "default": "#1f2937",
+        "active": "#22c55e"
+      }
+    },
+    "gradients": {
+      "hero": "linear-gradient(to bottom, rgba(5, 10, 7, 0) 0%, #050a07 100%)",
+      "card": "linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)",
+      "glow": "radial-gradient(circle at center, rgba(34, 197, 94, 0.15) 0%, transparent 70%)"
+    }
+  },
+  "layout": {
+    "grid_system": {
+      "base": "grid-cols-1 md:grid-cols-12",
+      "gap": "gap-6 md:gap-8",
+      "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+    },
+    "spacing": {
+      "section_padding": "py-20 md:py-32",
+      "element_spacing": "space-y-6"
+    },
+    "z_index": {
+      "map": 0,
+      "overlay": 10,
+      "modal": 50,
+      "tooltip": 60,
+      "nav": 100
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 py-3 font-medium transition-all duration-300 shadow-[0_0_20px_rgba(74,222,128,0.3)] hover:shadow-[0_0_30px_rgba(74,222,128,0.5)]",
+      "secondary": "bg-transparent border border-primary/30 text-primary hover:bg-primary/10 rounded-full px-8 py-3 transition-all duration-300",
+      "ghost": "text-primary/80 hover:text-primary hover:bg-primary/5 rounded-lg px-4 py-2"
+    },
+    "cards": {
+      "base": "bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden transition-all duration-300 hover:border-primary/30",
+      "interactive": "cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/5"
+    },
+    "inputs": {
+      "base": "bg-white/5 border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-lg h-12 px-4 text-white placeholder:text-white/30 transition-all"
+    },
+    "map_overlay": {
+      "panel": "absolute top-4 left-4 z-10 bg-black/80 backdrop-blur-md border border-white/10 rounded-xl p-4 w-80 shadow-2xl",
+      "tooltip": "bg-black/90 text-white text-xs p-2 rounded border border-white/20 shadow-xl"
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": "backdrop-blur-xl bg-black/30 border border-white/10",
+    "noise_texture": "url('/assets/noise.png') opacity-5",
+    "shadows": {
+      "glow": "0 0 40px -10px rgba(34, 197, 94, 0.3)",
+      "deep": "0 25px 50px -12px rgba(0, 0, 0, 0.5)"
+    }
+  },
+  "assets": {
+    "images": {
+      "hero_bg": {
+        "url": "https://images.unsplash.com/photo-1769258958976-8852440011b8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHwxfHxhZXJpYWwlMjB2aWV3JTIwZ3JlZW4lMjBsYW5kJTIwcGxvdHxlbnwwfHx8fDE3Njk5ODYxMDl8MA&ixlib=rb-4.1.0&q=85",
+        "alt": "Aerial view of green land plots",
+        "usage": "Hero section background with overlay"
+      },
+      "texture_bg": {
+        "url": "https://images.unsplash.com/photo-1661842430584-a5d361f2a313?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwxfHx0cm9waWNhbCUyMGZvcmVzdCUyMHRleHR1cmUlMjBkYXJrfGVufDB8fHx8MTc2OTk4NjExOHww&ixlib=rb-4.1.0&q=85",
+        "alt": "Dark tropical forest texture",
+        "usage": "Subtle background texture for sections"
+      },
+      "golf_lifestyle": {
+        "url": "https://images.unsplash.com/photo-1701428181041-d5b4f1d66a87?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwzfHxsdXh1cnklMjBnb2xmJTIwY291cnNlJTIwc3Vuc2V0fGVufDB8fHx8MTc2OTk4NjExMnww&ixlib=rb-4.1.0&q=85",
+        "alt": "Golf lifestyle",
+        "usage": "Lifestyle section or gallery"
+      }
+    },
+    "icons": {
+      "library": "lucide-react",
+      "style": "Stroke width 1.5px, rounded caps"
+    }
+  },
+  "libraries": {
+    "map": "react-leaflet",
+    "ui": "shadcn/ui",
+    "animations": "framer-motion",
+    "icons": "lucide-react",
+    "notifications": "sonner"
+  },
+  "instructions_to_main_agent": [
+    "Implement the 'Nature' dark mode by default. Do not use a light mode toggle unless necessary for admin readability.",
+    "Use 'Playfair Display' for all headings (h1-h6) and 'Montserrat' for all body text and data numbers.",
+    "The Masterplan Map is the core feature. Ensure it takes up significant screen real estate (e.g., h-[80vh]).",
+    "Use the provided image URLs for backgrounds. Apply a dark overlay (bg-black/60) on hero images to ensure text readability.",
+    "For the Admin Dashboard, maintain the dark theme but prioritize data density and contrast.",
+    "Ensure all interactive elements have hover states that glow green (#4ade80).",
+    "Use 'sonner' for all toast notifications.",
+    "Follow the 'E1' design principles: Asymmetry, generous spacing, and emotional design."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: transition: all. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms",
+    "You MUST NOT center align the app container, ie do not add .App { text-align: center; } in the css file. This disrupts the human natural reading flow of text",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯📚🎭🎬🎪🎉🎊🎁🎀🎂🍰🎈🎨🎰💰💵💳🏦💎🪙💸🤑📊📈📉💹🔢🏆🥇 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
+    "Main agent relies on these image URLs. Missing categories (especially sponsor logos) = main agent will use placeholder text which is FORBIDDEN",
+    "Prioritize using pre-existing components from src/components/ui when applicable",
+    "Create new components that match the style and conventions of existing components when needed",
+    "Examine existing components to understand the project's component patterns before creating new ones",
+    "Components MUST use named exports (export const ComponentName = ...)",
+    "Pages MUST use default exports (export default function PageName() {...})",
+    "Use 'sonner' for toasts"
+  ]
+}
