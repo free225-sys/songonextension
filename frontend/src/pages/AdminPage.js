@@ -8,7 +8,6 @@ import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { Separator } from '../components/ui/separator';
-import { Switch } from '../components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -26,9 +25,10 @@ import {
 } from '../components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
-  MapPin, LayoutDashboard, Map, Upload, Settings, LogOut,
+  MapPin, LayoutDashboard, Map, Upload, LogOut,
   Search, Edit2, Trash2, Save, X, Image, FileUp, Plus,
-  ChevronRight, AlertCircle, CheckCircle, Eye
+  AlertCircle, CheckCircle, Key, FileText, Clock,
+  Copy, Shield, Download, Users, Eye, EyeOff
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -45,6 +45,8 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: t('admin_dashboard') },
     { id: 'parcelles', icon: Map, label: t('admin_parcelles') },
+    { id: 'access', icon: Key, label: 'Codes d\'accès' },
+    { id: 'logs', icon: FileText, label: 'Journal' },
     { id: 'kmz', icon: Upload, label: t('admin_kmz') },
   ];
 
@@ -295,7 +297,6 @@ const ParcellesTab = ({ parcelles, onUpdate, onDelete, getAuthHeaders }) => {
         </div>
       </div>
 
-      {/* Edit Dialog */}
       {editingParcelle && (
         <ParcelleEditDialog
           parcelle={editingParcelle}
@@ -305,7 +306,6 @@ const ParcellesTab = ({ parcelles, onUpdate, onDelete, getAuthHeaders }) => {
         />
       )}
 
-      {/* Delete Confirmation */}
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <DialogContent className="bg-[#0d1410] border-white/10">
           <DialogHeader>
@@ -583,6 +583,399 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
   );
 };
 
+// Access Codes Tab
+const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
+  const [codes, setCodes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [newCode, setNewCode] = useState({
+    client_name: '',
+    client_email: '',
+    parcelle_ids: [],
+    expires_hours: 72
+  });
+
+  const fetchCodes = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/access-codes`, {
+        headers: getAuthHeaders()
+      });
+      setCodes(response.data.access_codes || []);
+    } catch (error) {
+      console.error('Failed to fetch codes:', error);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchCodes();
+  }, []);
+
+  const handleCreateCode = async () => {
+    if (!newCode.client_name || !newCode.client_email) {
+      toast.error('Nom et email requis');
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `${API}/admin/access-codes`,
+        newCode,
+        { headers: getAuthHeaders() }
+      );
+      
+      toast.success(
+        <div>
+          <p className="font-medium">Code généré avec succès</p>
+          <p className="text-lg font-mono mt-1">{response.data.code}</p>
+        </div>,
+        { duration: 10000 }
+      );
+      
+      setShowCreateDialog(false);
+      setNewCode({ client_name: '', client_email: '', parcelle_ids: [], expires_hours: 72 });
+      fetchCodes();
+    } catch (error) {
+      toast.error('Erreur lors de la création');
+    }
+  };
+
+  const handleRevokeCode = async (codeId) => {
+    try {
+      await axios.delete(`${API}/admin/access-codes/${codeId}`, {
+        headers: getAuthHeaders()
+      });
+      toast.success('Code révoqué');
+      fetchCodes();
+    } catch (error) {
+      toast.error('Erreur lors de la révocation');
+    }
+  };
+
+  const copyCode = (code) => {
+    navigator.clipboard.writeText(code);
+    toast.success('Code copié');
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <div>
+          <h2 className="font-playfair text-2xl font-bold text-white mb-2">Codes d'accès</h2>
+          <p className="text-gray-400">Gérez les codes d'accès aux documents</p>
+        </div>
+        <Button 
+          onClick={() => setShowCreateDialog(true)}
+          className="btn-primary"
+          data-testid="create-code-btn"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nouveau code
+        </Button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="stat-card">
+          <div className="stat-value text-white">{codes.length}</div>
+          <div className="stat-label">Codes générés</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value text-green-400">{codes.filter(c => c.active && !c.is_expired).length}</div>
+          <div className="stat-label">Codes actifs</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value text-red-400">{codes.filter(c => !c.active || c.is_expired).length}</div>
+          <div className="stat-label">Codes expirés/révoqués</div>
+        </div>
+      </div>
+
+      {/* Codes List */}
+      <div className="card-glass overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Client</th>
+                <th>Email</th>
+                <th>Expiration</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-gray-500">
+                    Chargement...
+                  </td>
+                </tr>
+              ) : codes.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-gray-500">
+                    Aucun code d'accès
+                  </td>
+                </tr>
+              ) : (
+                codes.map((code) => (
+                  <tr key={code.id}>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-green-400 bg-green-500/10 px-2 py-1 rounded">
+                          {code.code}
+                        </span>
+                        <button 
+                          onClick={() => copyCode(code.code)}
+                          className="text-gray-500 hover:text-white"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                    <td className="text-white">{code.client_name}</td>
+                    <td className="text-gray-400">{code.client_email}</td>
+                    <td className="text-gray-400">
+                      {new Date(code.expires_at).toLocaleDateString('fr-FR')}
+                    </td>
+                    <td>
+                      {!code.active ? (
+                        <Badge className="bg-red-500/20 text-red-400">Révoqué</Badge>
+                      ) : code.is_expired ? (
+                        <Badge className="bg-gray-500/20 text-gray-400">Expiré</Badge>
+                      ) : (
+                        <Badge className="bg-green-500/20 text-green-400">Actif</Badge>
+                      )}
+                    </td>
+                    <td>
+                      {code.active && !code.is_expired && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRevokeCode(code.id)}
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          <EyeOff className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Create Code Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="bg-[#0d1410] border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-white font-playfair">Générer un code d'accès</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Créez un code temporaire pour un client
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-gray-400 text-sm mb-2 block">Nom du client *</label>
+              <Input
+                value={newCode.client_name}
+                onChange={(e) => setNewCode({ ...newCode, client_name: e.target.value })}
+                className="input-dark"
+                placeholder="Jean Dupont"
+                data-testid="client-name-input"
+              />
+            </div>
+            <div>
+              <label className="text-gray-400 text-sm mb-2 block">Email *</label>
+              <Input
+                value={newCode.client_email}
+                onChange={(e) => setNewCode({ ...newCode, client_email: e.target.value })}
+                className="input-dark"
+                placeholder="jean@exemple.com"
+                data-testid="client-email-input"
+              />
+            </div>
+            <div>
+              <label className="text-gray-400 text-sm mb-2 block">Durée de validité</label>
+              <Select
+                value={String(newCode.expires_hours)}
+                onValueChange={(v) => setNewCode({ ...newCode, expires_hours: parseInt(v) })}
+              >
+                <SelectTrigger className="bg-white/5 border-white/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0d1410] border-white/10">
+                  <SelectItem value="24">24 heures</SelectItem>
+                  <SelectItem value="72">72 heures (3 jours)</SelectItem>
+                  <SelectItem value="168">1 semaine</SelectItem>
+                  <SelectItem value="720">1 mois</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-gray-400 text-sm mb-2 block">Accès aux parcelles</label>
+              <Select
+                value={newCode.parcelle_ids.length === 0 ? 'all' : 'specific'}
+                onValueChange={(v) => {
+                  if (v === 'all') {
+                    setNewCode({ ...newCode, parcelle_ids: [] });
+                  }
+                }}
+              >
+                <SelectTrigger className="bg-white/5 border-white/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0d1410] border-white/10">
+                  <SelectItem value="all">Toutes les parcelles</SelectItem>
+                  <SelectItem value="specific">Parcelles spécifiques</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleCreateCode}
+              className="btn-primary"
+              data-testid="generate-code-btn"
+            >
+              <Key className="w-4 h-4 mr-2" />
+              Générer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+// Download Logs Tab
+const DownloadLogsTab = ({ getAuthHeaders }) => {
+  const [logs, setLogs] = useState([]);
+  const [stats, setStats] = useState({ total_downloads: 0, by_client: {}, by_parcelle: {} });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [logsRes, statsRes] = await Promise.all([
+          axios.get(`${API}/admin/download-logs`, { headers: getAuthHeaders() }),
+          axios.get(`${API}/admin/download-logs/stats`, { headers: getAuthHeaders() })
+        ]);
+        setLogs(logsRes.data.logs || []);
+        setStats(statsRes.data);
+      } catch (error) {
+        console.error('Failed to fetch logs:', error);
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-playfair text-2xl font-bold text-white mb-2">Journal des téléchargements</h2>
+        <p className="text-gray-400">Traçabilité des accès aux documents</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="stat-card">
+          <div className="stat-value text-white">{stats.total_downloads}</div>
+          <div className="stat-label">Total téléchargements</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value text-green-400">{Object.keys(stats.by_client || {}).length}</div>
+          <div className="stat-label">Clients uniques</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value text-blue-400">{Object.keys(stats.by_parcelle || {}).length}</div>
+          <div className="stat-label">Parcelles consultées</div>
+        </div>
+      </div>
+
+      {/* Logs Table */}
+      <div className="card-glass overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Date/Heure</th>
+                <th>Client</th>
+                <th>Code</th>
+                <th>Parcelle</th>
+                <th>Document</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-8 text-gray-500">
+                    Chargement...
+                  </td>
+                </tr>
+              ) : logs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-8 text-gray-500">
+                    <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    Aucun téléchargement enregistré
+                  </td>
+                </tr>
+              ) : (
+                logs.map((log) => (
+                  <tr key={log.id}>
+                    <td className="text-gray-400">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        {new Date(log.timestamp).toLocaleString('fr-FR')}
+                      </div>
+                    </td>
+                    <td className="text-white font-medium">{log.client_name}</td>
+                    <td>
+                      <span className="font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded text-sm">
+                        {log.code}
+                      </span>
+                    </td>
+                    <td className="text-gray-400">{log.parcelle_id}</td>
+                    <td className="text-gray-400">{log.document_type}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Top Clients */}
+      {Object.keys(stats.by_client || {}).length > 0 && (
+        <div className="card-glass p-6">
+          <h3 className="font-playfair text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Users className="w-5 h-5 text-green-400" />
+            Top clients
+          </h3>
+          <div className="space-y-3">
+            {Object.entries(stats.by_client).slice(0, 5).map(([client, data]) => (
+              <div key={client} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <span className="text-white font-medium">{client}</span>
+                <Badge className="bg-green-500/20 text-green-400">
+                  {data.count} téléchargement(s)
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // KMZ Import Tab
 const KMZTab = ({ onImport, getAuthHeaders }) => {
   const { t } = useLanguage();
@@ -772,6 +1165,15 @@ export default function AdminPage() {
             onDelete={fetchData}
             getAuthHeaders={getAuthHeaders}
           />
+        )}
+        {activeTab === 'access' && (
+          <AccessCodesTab 
+            getAuthHeaders={getAuthHeaders}
+            parcelles={parcelles}
+          />
+        )}
+        {activeTab === 'logs' && (
+          <DownloadLogsTab getAuthHeaders={getAuthHeaders} />
         )}
         {activeTab === 'kmz' && (
           <KMZTab 
