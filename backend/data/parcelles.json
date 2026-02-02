@@ -1069,5 +1069,16 @@
       "usage_count": 0
     }
   ],
-  "download_logs": []
+  "download_logs": [
+    {
+      "id": "e1d3b538-03f0-4e55-9a9e-31f6901abe1d",
+      "code": "J7E7CN4J",
+      "client_name": "Test Client",
+      "parcelle_id": "tf-223737",
+      "document_type": "ACD",
+      "document_name": "ACD_tf-223737",
+      "timestamp": "2026-02-02T10:06:44.696007+00:00",
+      "ip_address": "N/A"
+    }
+  ]
 }
