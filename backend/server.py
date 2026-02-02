@@ -1,6 +1,7 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Form
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Form, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 import os
@@ -10,12 +11,15 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import uuid
+import secrets
+import string
 from datetime import datetime, timezone, timedelta
 import jwt
 import bcrypt
 import shutil
 import zipfile
 import xml.etree.ElementTree as ET
+from io import BytesIO
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -23,7 +27,9 @@ load_dotenv(ROOT_DIR / '.env')
 # Data file paths
 DATA_FILE = ROOT_DIR / 'data' / 'parcelles.json'
 UPLOADS_DIR = ROOT_DIR / 'uploads'
+DOCUMENTS_DIR = ROOT_DIR / 'documents'
 UPLOADS_DIR.mkdir(exist_ok=True)
+DOCUMENTS_DIR.mkdir(exist_ok=True)
 
 # JWT Configuration
 JWT_SECRET = os.environ.get('JWT_SECRET', 'songon-extension-secret-key-2024')
@@ -31,7 +37,7 @@ JWT_ALGORITHM = 'HS256'
 JWT_EXPIRATION_HOURS = 24
 
 # Create the main app
-app = FastAPI(title="Songon Extension API", version="1.0.0")
+app = FastAPI(title="Songon Extension API", version="1.1.0")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -121,15 +127,42 @@ class ContactInfo(BaseModel):
     telephone: str
     email: str
 
+class AccessCodeCreate(BaseModel):
+    client_name: str
+    client_email: str
+    parcelle_ids: List[str] = []  # Empty = all parcelles
+    expires_hours: int = 72  # Default 72 hours
+
+class AccessCodeVerify(BaseModel):
+    code: str
+    parcelle_id: str
+
+class DocumentAccessRequest(BaseModel):
+    code: str
+    parcelle_id: str
+    document_type: str
+
 # ==================== HELPERS ====================
 
 def load_data():
     """Load data from JSON file"""
     try:
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            data = json.load(f)
+            # Ensure required fields exist
+            if "access_codes" not in data:
+                data["access_codes"] = []
+            if "download_logs" not in data:
+                data["download_logs"] = []
+            return data
     except FileNotFoundError:
-        return {"parcelles": [], "config": {"map_center": [-4.287, 5.345], "map_zoom": 15}, "admin": {}}
+        return {
+            "parcelles": [], 
+            "config": {"map_center": [-4.287, 5.345], "map_zoom": 15}, 
+            "admin": {},
+            "access_codes": [],
+            "download_logs": []
+        }
 
 def save_data(data):
     """Save data to JSON file"""
@@ -155,6 +188,50 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Token invalide")
 
+def generate_access_code(length: int = 8) -> str:
+    """Generate a unique access code"""
+    chars = string.ascii_uppercase + string.digits
+    # Exclude confusing characters
+    chars = chars.replace('O', '').replace('0', '').replace('I', '').replace('1', '').replace('L', '')
+    return ''.join(secrets.choice(chars) for _ in range(length))
+
+def verify_access_code(code: str, parcelle_id: str) -> dict:
+    """Verify an access code and return code info if valid"""
+    data = load_data()
+    access_codes = data.get("access_codes", [])
+    
+    for ac in access_codes:
+        if ac["code"] == code.upper() and ac["active"]:
+            # Check expiration
+            expires_at = datetime.fromisoformat(ac["expires_at"])
+            if expires_at < datetime.now(timezone.utc):
+                return None
+            
+            # Check parcelle access
+            if ac["parcelle_ids"] and parcelle_id not in ac["parcelle_ids"]:
+                return None
+            
+            return ac
+    
+    return None
+
+def log_download(code: str, client_name: str, parcelle_id: str, document_type: str, document_name: str):
+    """Log a document download"""
+    data = load_data()
+    log_entry = {
+        "id": str(uuid.uuid4()),
+        "code": code,
+        "client_name": client_name,
+        "parcelle_id": parcelle_id,
+        "document_type": document_type,
+        "document_name": document_name,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "ip_address": "N/A"  # Would be populated from request in production
+    }
+    data.setdefault("download_logs", []).append(log_entry)
+    save_data(data)
+    logger.info(f"Document download logged: {client_name} - {document_name}")
+
 def parse_kml_file(kml_content: str) -> List[dict]:
     """Parse KML content and extract polygons"""
     parcelles = []
@@ -162,7 +239,6 @@ def parse_kml_file(kml_content: str) -> List[dict]:
         root = ET.fromstring(kml_content)
         ns = {'kml': 'http://www.opengis.net/kml/2.2'}
         
-        # Try with namespace first, then without
         placemarks = root.findall('.//kml:Placemark', ns)
         if not placemarks:
             placemarks = root.findall('.//Placemark')
@@ -232,7 +308,7 @@ def parse_kml_file(kml_content: str) -> List[dict]:
 
 @api_router.get("/")
 async def root():
-    return {"message": "Songon Extension API", "version": "1.0.0"}
+    return {"message": "Songon Extension API", "version": "1.1.0"}
 
 @api_router.get("/parcelles")
 async def get_parcelles():
@@ -276,6 +352,85 @@ async def get_stats():
         "vendu": vendu,
         "total_superficie": total_superficie,
         "valeur_totale": valeur_totale
+    }
+
+# ==================== DOCUMENT ACCESS ROUTES ====================
+
+@api_router.post("/documents/verify-code")
+async def verify_document_code(request: AccessCodeVerify):
+    """Verify access code for documents"""
+    access_info = verify_access_code(request.code, request.parcelle_id)
+    
+    if not access_info:
+        raise HTTPException(status_code=403, detail="Code d'accès invalide ou expiré")
+    
+    return {
+        "valid": True,
+        "client_name": access_info["client_name"],
+        "expires_at": access_info["expires_at"],
+        "parcelle_access": access_info["parcelle_ids"] or "all"
+    }
+
+@api_router.post("/documents/request-access")
+async def request_document_access(
+    parcelle_id: str,
+    client_name: str = Form(...),
+    client_email: str = Form(...)
+):
+    """Request document access (public - creates a pending request)"""
+    data = load_data()
+    
+    # Create access request (admin will approve and generate code)
+    request_entry = {
+        "id": str(uuid.uuid4()),
+        "parcelle_id": parcelle_id,
+        "client_name": client_name,
+        "client_email": client_email,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    data.setdefault("access_requests", []).append(request_entry)
+    save_data(data)
+    
+    return {
+        "message": "Demande d'accès envoyée. Vous recevrez un code par email.",
+        "request_id": request_entry["id"]
+    }
+
+@api_router.get("/documents/{parcelle_id}/{document_type}")
+async def get_document_with_watermark(
+    parcelle_id: str,
+    document_type: str,
+    code: str
+):
+    """Get document with watermark (requires valid access code)"""
+    access_info = verify_access_code(code, parcelle_id)
+    
+    if not access_info:
+        raise HTTPException(status_code=403, detail="Code d'accès invalide ou expiré")
+    
+    # Log the download
+    log_download(
+        code=code,
+        client_name=access_info["client_name"],
+        parcelle_id=parcelle_id,
+        document_type=document_type,
+        document_name=f"{document_type}_{parcelle_id}"
+    )
+    
+    # For now, return document info with watermark data
+    # In production, you would generate a watermarked PDF/image here
+    watermark_text = f"Document confidentiel - Code: {code} - {access_info['client_name']}"
+    
+    return {
+        "document_type": document_type,
+        "parcelle_id": parcelle_id,
+        "watermark": watermark_text,
+        "access_granted": True,
+        "accessed_by": access_info["client_name"],
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "legal_notice": "Ce document est strictement confidentiel. Toute reproduction ou diffusion non autorisée est interdite et pourra faire l'objet de poursuites."
     }
 
 # ==================== AUTH ROUTES ====================
@@ -345,22 +500,18 @@ async def upload_image(
     if image_type not in ["photo", "drone"]:
         raise HTTPException(status_code=400, detail="Type d'image invalide")
     
-    # Validate file type
     allowed_types = ["image/jpeg", "image/png", "image/webp"]
     if file.content_type not in allowed_types:
         raise HTTPException(status_code=400, detail="Type de fichier non autorisé")
     
-    # Create unique filename
     ext = file.filename.split('.')[-1] if '.' in file.filename else 'jpg'
     filename = f"{parcelle_id}_{image_type}_{uuid.uuid4().hex[:8]}.{ext}"
     filepath = UPLOADS_DIR / filename
     
-    # Save file
     with open(filepath, 'wb') as f:
         content = await file.read()
         f.write(content)
     
-    # Update parcelle data
     data = load_data()
     parcelles = data.get("parcelles", [])
     
@@ -399,7 +550,6 @@ async def delete_image(
             data["parcelles"] = parcelles
             save_data(data)
             
-            # Try to delete file
             try:
                 filename = image_url.split('/')[-1]
                 filepath = UPLOADS_DIR / filename
@@ -423,7 +573,6 @@ async def upload_kmz(file: UploadFile = File(...), username: str = Depends(verif
     
     try:
         if file.filename.endswith('.kmz'):
-            # Extract KML from KMZ
             import io
             with zipfile.ZipFile(io.BytesIO(content)) as zf:
                 for name in zf.namelist():
@@ -436,13 +585,11 @@ async def upload_kmz(file: UploadFile = File(...), username: str = Depends(verif
         if not kml_content:
             raise HTTPException(status_code=400, detail="Aucun fichier KML trouvé")
         
-        # Parse KML
         new_parcelles = parse_kml_file(kml_content)
         
         if not new_parcelles:
             raise HTTPException(status_code=400, detail="Aucune parcelle trouvée dans le fichier")
         
-        # Save KMZ file
         kmz_path = ROOT_DIR / 'data' / f"uploaded_{datetime.now().strftime('%Y%m%d_%H%M%S')}.kmz"
         with open(kmz_path, 'wb') as f:
             f.write(content)
@@ -462,7 +609,6 @@ async def import_parcelles(parcelles: List[dict], username: str = Depends(verify
     data = load_data()
     existing_parcelles = data.get("parcelles", [])
     
-    # Add new parcelles
     for p in parcelles:
         if not any(ep["id"] == p["id"] for ep in existing_parcelles):
             existing_parcelles.append(p)
@@ -495,6 +641,110 @@ async def update_config(config: dict, username: str = Depends(verify_token)):
     save_data(data)
     return data["config"]
 
+# ==================== ACCESS CODE MANAGEMENT ====================
+
+@api_router.post("/admin/access-codes")
+async def create_access_code(request: AccessCodeCreate, username: str = Depends(verify_token)):
+    """Generate a new access code for a client"""
+    data = load_data()
+    
+    code = generate_access_code()
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=request.expires_hours)
+    
+    code_entry = {
+        "id": str(uuid.uuid4()),
+        "code": code,
+        "client_name": request.client_name,
+        "client_email": request.client_email,
+        "parcelle_ids": request.parcelle_ids,
+        "expires_at": expires_at.isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": username,
+        "active": True,
+        "usage_count": 0
+    }
+    
+    data.setdefault("access_codes", []).append(code_entry)
+    save_data(data)
+    
+    logger.info(f"Access code generated for {request.client_name}: {code}")
+    
+    return {
+        "code": code,
+        "client_name": request.client_name,
+        "expires_at": expires_at.isoformat(),
+        "parcelle_access": request.parcelle_ids or "all"
+    }
+
+@api_router.get("/admin/access-codes")
+async def list_access_codes(username: str = Depends(verify_token)):
+    """List all access codes"""
+    data = load_data()
+    codes = data.get("access_codes", [])
+    
+    # Add status info
+    now = datetime.now(timezone.utc)
+    for code in codes:
+        expires_at = datetime.fromisoformat(code["expires_at"])
+        code["is_expired"] = expires_at < now
+    
+    return {"access_codes": codes}
+
+@api_router.delete("/admin/access-codes/{code_id}")
+async def revoke_access_code(code_id: str, username: str = Depends(verify_token)):
+    """Revoke an access code"""
+    data = load_data()
+    codes = data.get("access_codes", [])
+    
+    for i, code in enumerate(codes):
+        if code["id"] == code_id:
+            codes[i]["active"] = False
+            data["access_codes"] = codes
+            save_data(data)
+            return {"revoked": code_id}
+    
+    raise HTTPException(status_code=404, detail="Code non trouvé")
+
+@api_router.get("/admin/download-logs")
+async def get_download_logs(username: str = Depends(verify_token)):
+    """Get document download logs"""
+    data = load_data()
+    logs = data.get("download_logs", [])
+    
+    # Sort by timestamp descending
+    logs.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    
+    return {"logs": logs}
+
+@api_router.get("/admin/download-logs/stats")
+async def get_download_stats(username: str = Depends(verify_token)):
+    """Get download statistics"""
+    data = load_data()
+    logs = data.get("download_logs", [])
+    
+    # Group by code/client
+    by_client = {}
+    for log in logs:
+        client = log.get("client_name", "Unknown")
+        if client not in by_client:
+            by_client[client] = {"count": 0, "documents": []}
+        by_client[client]["count"] += 1
+        by_client[client]["documents"].append(log.get("document_name"))
+    
+    # Group by parcelle
+    by_parcelle = {}
+    for log in logs:
+        parcelle = log.get("parcelle_id", "Unknown")
+        if parcelle not in by_parcelle:
+            by_parcelle[parcelle] = 0
+        by_parcelle[parcelle] += 1
+    
+    return {
+        "total_downloads": len(logs),
+        "by_client": by_client,
+        "by_parcelle": by_parcelle
+    }
+
 # Include the router in the main app
 app.include_router(api_router)
 
@@ -511,10 +761,10 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup():
-    logger.info("Songon Extension API started")
-    # Ensure data directory exists
+    logger.info("Songon Extension API v1.1.0 started")
     (ROOT_DIR / 'data').mkdir(exist_ok=True)
     UPLOADS_DIR.mkdir(exist_ok=True)
+    DOCUMENTS_DIR.mkdir(exist_ok=True)
 
 @app.on_event("shutdown")
 async def shutdown():
