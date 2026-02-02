@@ -198,6 +198,65 @@ class SongonAPITester:
         self.token = temp_token
         return success
 
+    def test_document_access_invalid_code(self):
+        """Test document access with invalid code"""
+        return self.run_test(
+            "Document Access Invalid Code",
+            "POST",
+            "documents/verify-code",
+            403,
+            {"code": "INVALID123", "parcelle_id": "test-parcelle"}
+        )
+
+    def test_document_access_valid_code(self):
+        """Test document access with valid test code"""
+        return self.run_test(
+            "Document Access Valid Code",
+            "POST", 
+            "documents/verify-code",
+            200,
+            {"code": "J7E7CN4J", "parcelle_id": "test-parcelle"}
+        )
+
+    def test_create_access_code(self):
+        """Test creating access code (admin only)"""
+        if not self.token:
+            self.log_result("Create Access Code", False, "No token available")
+            return False, {}
+        return self.run_test(
+            "Create Access Code",
+            "POST",
+            "admin/access-codes", 
+            200,
+            {
+                "client_name": "Test Client",
+                "client_email": "test@example.com",
+                "parcelle_ids": [],
+                "expires_hours": 72
+            }
+        )
+
+    def test_list_access_codes(self):
+        """Test listing access codes (admin only)"""
+        if not self.token:
+            self.log_result("List Access Codes", False, "No token available")
+            return False, {}
+        return self.run_test("List Access Codes", "GET", "admin/access-codes", 200)
+
+    def test_download_logs(self):
+        """Test getting download logs (admin only)"""
+        if not self.token:
+            self.log_result("Download Logs", False, "No token available")
+            return False, {}
+        return self.run_test("Download Logs", "GET", "admin/download-logs", 200)
+
+    def test_download_logs_stats(self):
+        """Test getting download statistics (admin only)"""
+        if not self.token:
+            self.log_result("Download Logs Stats", False, "No token available")
+            return False, {}
+        return self.run_test("Download Logs Stats", "GET", "admin/download-logs/stats", 200)
+
     def run_all_tests(self):
         """Run all API tests"""
         print("=" * 60)
