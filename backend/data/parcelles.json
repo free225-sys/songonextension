@@ -1054,5 +1054,20 @@
   "admin": {
     "username": "admin",
     "password_hash": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.HJ.JGh9VqEIx/i"
-  }
+  },
+  "access_codes": [
+    {
+      "id": "384b4045-efdf-4746-ae9c-b0331dc044b6",
+      "code": "J7E7CN4J",
+      "client_name": "Test Client",
+      "client_email": "test@example.com",
+      "parcelle_ids": [],
+      "expires_at": "2026-02-05T10:06:37.620990+00:00",
+      "created_at": "2026-02-02T10:06:37.621018+00:00",
+      "created_by": "admin",
+      "active": true,
+      "usage_count": 0
+    }
+  ],
+  "download_logs": []
 }
