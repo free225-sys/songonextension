@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Polygon, Tooltip, useMap } from 'react-leaflet';
 import { useLanguage } from '../contexts/LanguageContext';
 import 'leaflet/dist/leaflet.css';
@@ -12,18 +12,22 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-const STATUS_COLORS = {
+// Light theme colors - pastel/soft tones for prestigious look
+const STATUS_COLORS_LIGHT = {
   disponible: {
-    fill: 'rgba(34, 197, 94, 0.4)',
-    stroke: '#22c55e',
+    fill: 'rgba(34, 139, 34, 0.25)',
+    stroke: '#228b22',
+    strokeHover: '#166616',
   },
   option: {
-    fill: 'rgba(249, 115, 22, 0.4)',
-    stroke: '#f97316',
+    fill: 'rgba(210, 105, 30, 0.25)',
+    stroke: '#d2691e',
+    strokeHover: '#a0522d',
   },
   vendu: {
-    fill: 'rgba(239, 68, 68, 0.4)',
-    stroke: '#ef4444',
+    fill: 'rgba(178, 34, 34, 0.25)',
+    stroke: '#b22222',
+    strokeHover: '#8b0000',
   },
 };
 
@@ -41,7 +45,7 @@ const MapController = ({ center, zoom }) => {
 
 const ParcellePolygon = ({ parcelle, onClick, isSelected }) => {
   const { t } = useLanguage();
-  const colors = STATUS_COLORS[parcelle.statut] || STATUS_COLORS.disponible;
+  const colors = STATUS_COLORS_LIGHT[parcelle.statut] || STATUS_COLORS_LIGHT.disponible;
   
   // Convert [lng, lat] to [lat, lng] for Leaflet
   const positions = useMemo(() => {
@@ -63,8 +67,8 @@ const ParcellePolygon = ({ parcelle, onClick, isSelected }) => {
       positions={positions}
       pathOptions={{
         fillColor: colors.fill,
-        fillOpacity: isSelected ? 0.7 : 0.4,
-        color: colors.stroke,
+        fillOpacity: isSelected ? 0.5 : 0.35,
+        color: isSelected ? colors.strokeHover : colors.stroke,
         weight: isSelected ? 3 : 2,
         opacity: 1,
       }}
@@ -72,30 +76,32 @@ const ParcellePolygon = ({ parcelle, onClick, isSelected }) => {
         click: () => onClick(parcelle),
         mouseover: (e) => {
           e.target.setStyle({
-            fillOpacity: 0.6,
+            fillOpacity: 0.5,
             weight: 3,
+            color: colors.strokeHover,
           });
         },
         mouseout: (e) => {
           if (!isSelected) {
             e.target.setStyle({
-              fillOpacity: 0.4,
+              fillOpacity: 0.35,
               weight: 2,
+              color: colors.stroke,
             });
           }
         },
       }}
     >
-      <Tooltip sticky className="leaflet-tooltip-custom">
-        <div className="bg-black/95 text-white p-3 rounded-lg min-w-[200px]">
-          <div className="font-semibold text-green-400 mb-1">{parcelle.nom}</div>
-          <div className="text-xs text-gray-300 mb-2">{parcelle.type_projet}</div>
-          <div className="flex justify-between items-center text-sm">
-            <span>{formatPrice(parcelle.prix_m2)} FCFA/m²</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs ${
-              parcelle.statut === 'disponible' ? 'bg-green-500/20 text-green-400' :
-              parcelle.statut === 'option' ? 'bg-orange-500/20 text-orange-400' :
-              'bg-red-500/20 text-red-400'
+      <Tooltip sticky className="leaflet-tooltip-light">
+        <div className="bg-white text-gray-800 p-3 rounded-lg min-w-[220px] shadow-lg border border-gray-100">
+          <div className="font-semibold text-green-700 text-base mb-1">{parcelle.nom}</div>
+          <div className="text-xs text-gray-500 mb-2">{parcelle.type_projet} • {parcelle.superficie} {parcelle.unite_superficie}</div>
+          <div className="flex justify-between items-center">
+            <span className="font-bold text-gray-900">{formatPrice(parcelle.prix_m2)} FCFA/m²</span>
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+              parcelle.statut === 'disponible' ? 'bg-green-100 text-green-700' :
+              parcelle.statut === 'option' ? 'bg-orange-100 text-orange-700' :
+              'bg-red-100 text-red-700'
             }`}>
               {statusLabels[parcelle.statut]}
             </span>
@@ -113,8 +119,6 @@ export const MasterplanMap = ({
   selectedParcelle,
   filterStatus = 'all'
 }) => {
-  const mapRef = useRef(null);
-  
   const filteredParcelles = useMemo(() => {
     if (filterStatus === 'all') return parcelles;
     return parcelles.filter(p => p.statut === filterStatus);
@@ -123,10 +127,12 @@ export const MasterplanMap = ({
   const center = config?.map_center || [-4.287, 5.345];
   const zoom = config?.map_zoom || 15;
 
+  // Light/minimalist tile layer options
+  const tileLayerUrl = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+  
   return (
-    <div className="map-container relative" data-testid="masterplan-map">
+    <div className="map-container relative rounded-2xl overflow-hidden shadow-xl border border-green-100" data-testid="masterplan-map">
       <MapContainer
-        ref={mapRef}
         center={[center[1], center[0]]}
         zoom={zoom}
         style={{ height: '100%', width: '100%' }}
@@ -136,7 +142,7 @@ export const MasterplanMap = ({
         <MapController center={center} zoom={zoom} />
         
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url={tileLayerUrl}
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
         />
         
