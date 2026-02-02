@@ -1,15 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
   X, MapPin, Ruler, TreePine, FileText, DollarSign, 
   TrendingUp, Image, Phone, Mail, Download, CheckCircle,
-  Building, Mountain, Leaf
+  Building, Mountain, Leaf, Lock, Unlock, Shield, AlertTriangle,
+  KeyRound, Eye
 } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
 import { Separator } from './ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { toast } from 'sonner';
+import axios from 'axios';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('fr-FR').format(price);
@@ -62,6 +68,242 @@ const TagList = ({ items }) => (
     ))}
   </div>
 );
+
+// Document Access Component with Code Verification
+const DocumentAccessSection = ({ parcelle, t }) => {
+  const [accessCode, setAccessCode] = useState('');
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [clientInfo, setClientInfo] = useState(null);
+  const [verifying, setVerifying] = useState(false);
+  const [showLegalNotice, setShowLegalNotice] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+
+  const verifyCode = async () => {
+    if (!accessCode.trim()) {
+      toast.error('Veuillez entrer un code d\'accès');
+      return;
+    }
+
+    setVerifying(true);
+    try {
+      const response = await axios.post(`${API}/documents/verify-code`, {
+        code: accessCode.toUpperCase(),
+        parcelle_id: parcelle.id
+      });
+
+      if (response.data.valid) {
+        setIsUnlocked(true);
+        setClientInfo(response.data);
+        toast.success('Accès autorisé');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Code invalide ou expiré');
+    }
+    setVerifying(false);
+  };
+
+  const handleDocumentAccess = async (docType) => {
+    setSelectedDocument(docType);
+    setShowLegalNotice(true);
+  };
+
+  const confirmDownload = async () => {
+    if (!selectedDocument) return;
+
+    try {
+      const response = await axios.get(
+        `${API}/documents/${parcelle.id}/${selectedDocument}?code=${accessCode}`
+      );
+
+      // Show watermark info
+      toast.success(
+        <div className="text-sm">
+          <p className="font-medium">Document accessible</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Filigrane: {response.data.watermark}
+          </p>
+        </div>,
+        { duration: 5000 }
+      );
+
+      setShowLegalNotice(false);
+      setSelectedDocument(null);
+    } catch (error) {
+      toast.error('Erreur lors de l\'accès au document');
+    }
+  };
+
+  const documentTypes = [
+    { key: 'ACD', label: 'Arrêté de Concession Définitive', icon: FileText },
+    { key: 'plan_bornage', label: 'Plan de bornage', icon: MapPin },
+    { key: 'plan_situation', label: 'Plan de situation', icon: MapPin },
+    { key: 'extrait_cadastral', label: 'Extrait cadastral', icon: FileText },
+  ];
+
+  const availableDocs = documentTypes.filter(doc => 
+    parcelle.documents?.includes(doc.label.split(' ')[0]) || 
+    parcelle.documents?.includes(doc.key)
+  );
+
+  return (
+    <div className="card-glass p-4">
+      <h3 className="font-playfair text-sm font-semibold text-green-400 mb-3 flex items-center gap-2">
+        <FileText className="w-4 h-4" />
+        {t('detail_situation_fonciere')}
+      </h3>
+
+      {/* Status foncier */}
+      <div className="mb-4">
+        <span className="text-gray-400 text-xs block mb-2">{t('field_statut_foncier')}</span>
+        <TagList items={parcelle.statut_foncier} />
+      </div>
+
+      <Separator className="my-4 bg-white/10" />
+
+      {/* Documents Section */}
+      <div>
+        <span className="text-gray-400 text-xs block mb-3">{t('field_documents')}</span>
+
+        {!isUnlocked ? (
+          // Locked State
+          <div className="bg-black/40 rounded-xl p-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-8 h-8 text-amber-500" />
+            </div>
+            <h4 className="font-playfair text-lg font-semibold text-white mb-2">
+              Documents Sécurisés
+            </h4>
+            <p className="text-gray-400 text-sm mb-4">
+              Entrez votre code d'accès pour consulter les documents officiels.
+            </p>
+
+            <div className="flex gap-2 max-w-xs mx-auto">
+              <Input
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                placeholder="CODE D'ACCÈS"
+                className="input-dark text-center font-mono tracking-widest"
+                maxLength={8}
+                data-testid="document-access-code"
+              />
+              <Button 
+                onClick={verifyCode}
+                disabled={verifying}
+                className="btn-primary px-4"
+                data-testid="verify-code-btn"
+              >
+                {verifying ? (
+                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Unlock className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+
+            <p className="text-gray-500 text-xs mt-4">
+              Pas de code ? <button className="text-green-400 hover:underline">Demander l'accès</button>
+            </p>
+          </div>
+        ) : (
+          // Unlocked State
+          <div className="space-y-3">
+            {/* Access Info Banner */}
+            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-center gap-3">
+              <Shield className="w-5 h-5 text-green-400 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-green-400 text-sm font-medium">Accès autorisé</p>
+                <p className="text-gray-400 text-xs">
+                  {clientInfo?.client_name} • Expire: {new Date(clientInfo?.expires_at).toLocaleDateString('fr-FR')}
+                </p>
+              </div>
+            </div>
+
+            {/* Document List */}
+            <div className="space-y-2">
+              {availableDocs.length > 0 ? (
+                availableDocs.map((doc) => (
+                  <button
+                    key={doc.key}
+                    onClick={() => handleDocumentAccess(doc.key)}
+                    className="w-full flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group"
+                    data-testid={`doc-${doc.key}`}
+                  >
+                    <doc.icon className="w-4 h-4 text-green-400" />
+                    <span className="flex-1 text-left text-white text-sm">{doc.label}</span>
+                    <Eye className="w-4 h-4 text-gray-500 group-hover:text-green-400 transition-colors" />
+                  </button>
+                ))
+              ) : (
+                <p className="text-gray-500 text-sm text-center py-4">
+                  Aucun document disponible pour cette parcelle
+                </p>
+              )}
+            </div>
+
+            {/* Re-lock option */}
+            <button 
+              onClick={() => { setIsUnlocked(false); setAccessCode(''); setClientInfo(null); }}
+              className="text-gray-500 text-xs hover:text-gray-400 transition-colors"
+            >
+              <Lock className="w-3 h-3 inline mr-1" />
+              Verrouiller l'accès
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Legal Notice Modal */}
+      {showLegalNotice && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1100] flex items-center justify-center p-4">
+          <div className="bg-[#0d1410] border border-white/10 rounded-2xl max-w-md w-full p-6 animate-fade-in">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-amber-500" />
+              </div>
+              <div>
+                <h3 className="font-playfair text-lg font-semibold text-white">
+                  Avertissement Légal
+                </h3>
+                <p className="text-gray-400 text-sm">Confidentialité des documents</p>
+              </div>
+            </div>
+
+            <div className="legal-banner rounded-lg p-4 mb-4">
+              <p className="text-sm leading-relaxed">
+                Ce document est <strong>strictement confidentiel</strong> et destiné uniquement à l'usage du destinataire identifié. 
+                Toute reproduction, diffusion ou utilisation non autorisée est <strong>interdite</strong> et pourra faire l'objet de poursuites judiciaires.
+              </p>
+            </div>
+
+            <div className="bg-white/5 rounded-lg p-3 mb-4">
+              <p className="text-xs text-gray-400">
+                <strong className="text-white">Filigrane numérique :</strong> Ce document sera marqué avec votre identifiant unique ({clientInfo?.client_name}) pour traçabilité.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => { setShowLegalNotice(false); setSelectedDocument(null); }}
+                className="flex-1"
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={confirmDownload}
+                className="flex-1 btn-primary"
+                data-testid="confirm-download"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                J'accepte et télécharge
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const ParcelleDetail = ({ parcelle, onClose, isOpen }) => {
   const { t } = useLanguage();
@@ -132,20 +374,8 @@ export const ParcelleDetail = ({ parcelle, onClose, isOpen }) => {
                 <InfoRow label={t('field_distance')} value={parcelle.distance_ville} />
               </div>
 
-              <div className="card-glass p-4">
-                <h3 className="font-playfair text-sm font-semibold text-green-400 mb-3 flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  {t('detail_situation_fonciere')}
-                </h3>
-                <div className="mb-3">
-                  <span className="text-gray-400 text-xs block mb-2">{t('field_statut_foncier')}</span>
-                  <TagList items={parcelle.statut_foncier} />
-                </div>
-                <div>
-                  <span className="text-gray-400 text-xs block mb-2">{t('field_documents')}</span>
-                  <TagList items={parcelle.documents} />
-                </div>
-              </div>
+              {/* Document Access with Security */}
+              <DocumentAccessSection parcelle={parcelle} t={t} />
             </TabsContent>
 
             {/* Caractéristiques Tab */}
