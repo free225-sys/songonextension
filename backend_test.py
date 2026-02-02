@@ -295,6 +295,17 @@ class SongonAPITester:
                 # Revert back
                 self.test_admin_update_parcelle_status(test_parcelle["id"], "disponible")
 
+        # Document security features
+        print("\n🔒 TESTING DOCUMENT SECURITY FEATURES")
+        self.test_document_access_invalid_code()
+        self.test_document_access_valid_code()
+        
+        if self.token:
+            self.test_create_access_code()
+            self.test_list_access_codes()
+            self.test_download_logs()
+            self.test_download_logs_stats()
+
         # Print summary
         print("\n" + "=" * 60)
         print("📊 TEST SUMMARY")
