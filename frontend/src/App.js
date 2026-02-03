@@ -7,8 +7,6 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 // Pages
 import HomePage from "@/pages/HomePage";
-import MasterplanPage from "@/pages/MasterplanPage";
-import ContactPage from "@/pages/ContactPage";
 import LoginPage from "@/pages/LoginPage";
 import AdminPage from "@/pages/AdminPage";
 
@@ -30,9 +28,14 @@ const ProtectedRoute = ({ children }) => {
 function AppRoutes() {
   return (
     <Routes>
+      {/* Main One-Page */}
       <Route path="/" element={<HomePage />} />
-      <Route path="/masterplan" element={<MasterplanPage />} />
-      <Route path="/contact" element={<ContactPage />} />
+      
+      {/* Redirect old routes to home with hash anchors */}
+      <Route path="/masterplan" element={<Navigate to="/#masterplan" replace />} />
+      <Route path="/contact" element={<Navigate to="/#contact" replace />} />
+      
+      {/* Auth & Admin */}
       <Route path="/login" element={<LoginPage />} />
       <Route 
         path="/admin" 
@@ -42,6 +45,8 @@ function AppRoutes() {
           </ProtectedRoute>
         } 
       />
+      
+      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -60,6 +65,7 @@ function App() {
                 background: 'rgba(0, 0, 0, 0.9)',
                 color: '#f0fdf4',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
+                fontFamily: 'Montserrat, sans-serif',
               },
             }}
           />
