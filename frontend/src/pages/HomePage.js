@@ -1,15 +1,24 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import { ParcelleDetail } from '../components/ParcelleDetail';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
 import { 
   MapPin, ArrowRight, TreePine, TrendingUp, 
   Shield, ChevronDown, Mail, Phone, ExternalLink,
-  Menu, X, Globe, Filter, Clock
+  Menu, X, Globe, Filter, Clock, Lock, Eye, EyeOff
 } from 'lucide-react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 // Lazy load the map component for better performance
 const MasterplanMap = lazy(() => import('../components/MasterplanMap'));
