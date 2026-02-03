@@ -804,21 +804,37 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
 // Access Codes Tab
 const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
   const [codes, setCodes] = useState([]);
+  const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedCodeDetails, setSelectedCodeDetails] = useState(null);
   const [newCode, setNewCode] = useState({ client_name: '', client_email: '', parcelle_ids: [], expires_hours: 72 });
 
-  const fetchCodes = async () => {
+  const fetchData = async () => {
     try {
-      const response = await axios.get(`${API}/admin/access-codes`, { headers: getAuthHeaders() });
-      setCodes(response.data.access_codes || []);
+      const [codesRes, logsRes] = await Promise.all([
+        axios.get(`${API}/admin/access-codes`, { headers: getAuthHeaders() }),
+        axios.get(`${API}/admin/download-logs`, { headers: getAuthHeaders() })
+      ]);
+      setCodes(codesRes.data.access_codes || []);
+      setLogs(logsRes.data.logs || []);
     } catch (error) {
-      console.error('Failed to fetch codes:', error);
+      console.error('Failed to fetch data:', error);
     }
     setLoading(false);
   };
 
-  useEffect(() => { fetchCodes(); }, []);
+  useEffect(() => { fetchData(); }, []);
+
+  // Get documents consulted by a specific code
+  const getCodeUsage = (code) => {
+    const codeLogs = logs.filter(l => l.code === code);
+    return {
+      count: codeLogs.length,
+      documents: [...new Set(codeLogs.map(l => l.document_type))],
+      lastAccess: codeLogs.length > 0 ? codeLogs[codeLogs.length - 1].timestamp : null
+    };
+  };
 
   const handleCreateCode = async () => {
     if (!newCode.client_name || !newCode.client_email) {
@@ -830,7 +846,7 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
       toast.success(<div><p className="font-medium">Code généré</p><p className="text-lg font-mono mt-1">{response.data.code}</p></div>, { duration: 10000 });
       setShowCreateDialog(false);
       setNewCode({ client_name: '', client_email: '', parcelle_ids: [], expires_hours: 72 });
-      fetchCodes();
+      fetchData();
     } catch (error) {
       toast.error('Erreur lors de la création');
     }
@@ -840,7 +856,7 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
     try {
       await axios.delete(`${API}/admin/access-codes/${codeId}`, { headers: getAuthHeaders() });
       toast.success('Code révoqué');
-      fetchCodes();
+      fetchData();
     } catch (error) {
       toast.error('Erreur lors de la révocation');
     }
@@ -864,9 +880,10 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <ModernStatCard icon={Key} label="Codes générés" value={codes.length} color="bg-gradient-to-br from-blue-500 to-blue-600" />
         <ModernStatCard icon={CheckCircle} label="Codes actifs" value={codes.filter(c => c.active && !c.is_expired).length} color="bg-gradient-to-br from-green-500 to-green-600" />
+        <ModernStatCard icon={Download} label="Documents consultés" value={logs.length} color="bg-gradient-to-br from-purple-500 to-purple-600" />
         <ModernStatCard icon={AlertCircle} label="Expirés/Révoqués" value={codes.filter(c => !c.active || c.is_expired).length} color="bg-gradient-to-br from-red-500 to-red-600" />
       </div>
 
@@ -879,6 +896,7 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
                 <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Code</th>
                 <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Client</th>
                 <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Email</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Docs consultés</th>
                 <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Expiration</th>
                 <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Statut</th>
                 <th className="text-right p-4 font-montserrat text-gray-400 text-sm font-medium">Actions</th>
@@ -886,38 +904,55 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
             </thead>
             <tbody className="divide-y divide-white/5">
               {loading ? (
-                <tr><td colSpan={6} className="text-center py-8 text-gray-500">Chargement...</td></tr>
+                <tr><td colSpan={7} className="text-center py-8 text-gray-500">Chargement...</td></tr>
               ) : codes.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-8 text-gray-500">Aucun code d'accès</td></tr>
+                <tr><td colSpan={7} className="text-center py-8 text-gray-500">Aucun code d'accès</td></tr>
               ) : (
-                codes.map((code) => (
-                  <tr key={code.id} className="hover:bg-white/5 transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-green-400 bg-green-500/10 px-2 py-1 rounded">{code.code}</span>
-                        <button onClick={() => copyCode(code.code)} className="text-gray-500 hover:text-white"><Copy className="w-4 h-4" /></button>
-                      </div>
-                    </td>
-                    <td className="p-4 font-montserrat text-white">{code.client_name}</td>
-                    <td className="p-4 font-montserrat text-gray-400">{code.client_email}</td>
-                    <td className="p-4 font-montserrat text-gray-400">{new Date(code.expires_at).toLocaleDateString('fr-FR')}</td>
-                    <td className="p-4">
-                      {!code.active ? (
-                        <Badge className="bg-red-500/20 text-red-400 border border-red-500/30">Révoqué</Badge>
-                      ) : code.is_expired ? (
-                        <Badge className="bg-gray-500/20 text-gray-400 border border-gray-500/30">Expiré</Badge>
-                      ) : (
-                        <Badge className="bg-green-500/20 text-green-400 border border-green-500/30">Actif</Badge>
-                      )}
-                    </td>
-                    <td className="p-4 text-right">
-                      {code.active && !code.is_expired && (
-                        <Button size="sm" variant="ghost" onClick={() => handleRevokeCode(code.id)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
-                          <EyeOff className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
+                codes.map((code) => {
+                  const usage = getCodeUsage(code.code);
+                  return (
+                    <tr key={code.id} className="hover:bg-white/5 transition-colors">
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-green-400 bg-green-500/10 px-2 py-1 rounded">{code.code}</span>
+                          <button onClick={() => copyCode(code.code)} className="text-gray-500 hover:text-white"><Copy className="w-4 h-4" /></button>
+                        </div>
+                      </td>
+                      <td className="p-4 font-montserrat text-white font-medium">{code.client_name}</td>
+                      <td className="p-4 font-montserrat text-gray-400 text-sm">{code.client_email}</td>
+                      <td className="p-4">
+                        {usage.count > 0 ? (
+                          <button 
+                            onClick={() => setSelectedCodeDetails({ code: code.code, client: code.client_name, logs: logs.filter(l => l.code === code.code) })}
+                            className="flex items-center gap-2 text-purple-400 hover:text-purple-300"
+                          >
+                            <Download className="w-4 h-4" />
+                            <span className="text-sm font-medium">{usage.count} accès</span>
+                          </button>
+                        ) : (
+                          <span className="text-gray-500 text-sm">Aucun</span>
+                        )}
+                      </td>
+                      <td className="p-4 font-montserrat text-gray-400 text-sm">{new Date(code.expires_at).toLocaleDateString('fr-FR')}</td>
+                      <td className="p-4">
+                        {!code.active ? (
+                          <Badge className="bg-red-500/20 text-red-400 border border-red-500/30">Révoqué</Badge>
+                        ) : code.is_expired ? (
+                          <Badge className="bg-gray-500/20 text-gray-400 border border-gray-500/30">Expiré</Badge>
+                        ) : (
+                          <Badge className="bg-green-500/20 text-green-400 border border-green-500/30">Actif</Badge>
+                        )}
+                      </td>
+                      <td className="p-4 text-right">
+                        {code.active && !code.is_expired && (
+                          <Button size="sm" variant="ghost" onClick={() => handleRevokeCode(code.id)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
+                            <EyeOff className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
                 ))
               )}
             </tbody>
