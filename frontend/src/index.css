@@ -600,3 +600,14 @@ select.font-montserrat {
     height: 650px !important;
   }
 }
+
+/* Hide Emergent badge */
+#emergent-badge,
+a[href*="emergent"],
+[class*="emergent-badge"],
+div[style*="position: fixed"][style*="bottom"][style*="right"] > a[href*="emergent"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
