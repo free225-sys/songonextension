@@ -676,11 +676,6 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
-            Cliquez sur une parcelle pour afficher sa fiche détaillée. Survolez pour voir le prix au m².
-          </p>
-        </div>
-      </section>
-
       {/* ==================== CONTACT SECTION ==================== */}
       <section id="contact" className="py-20 lg:py-28 bg-[#050a07]" data-testid="contact-section">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
