@@ -87,7 +87,26 @@ const DocumentAccessSection = ({ parcelle, t }) => {
   const [sendMethod, setSendMethod] = useState(null);
   const [recipient, setRecipient] = useState('');
   const [sending, setSending] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [availableDocuments, setAvailableDocuments] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+
+  // Fetch available documents for this parcelle
+  React.useEffect(() => {
+    const fetchAvailableDocuments = async () => {
+      try {
+        const response = await axios.get(`${API}/parcelles/${parcelle.id}/documents`);
+        setAvailableDocuments(response.data.available_documents || []);
+      } catch (error) {
+        console.error('Error fetching documents:', error);
+        setAvailableDocuments([]);
+      }
+      setLoadingDocs(false);
+    };
+    
+    if (parcelle?.id) {
+      fetchAvailableDocuments();
+    }
+  }, [parcelle?.id]);
 
   const verifyCode = async () => {
     if (!accessCode.trim()) {
@@ -127,7 +146,6 @@ const DocumentAccessSection = ({ parcelle, t }) => {
     
     try {
       const url = `${API}/documents/${parcelle.id}/${selectedDocument.type}?code=${accessCode}&action=preview`;
-      setPreviewUrl(url);
       toast.success('Document en cours de chargement...');
       
       // Open in new tab for preview
@@ -190,10 +208,17 @@ const DocumentAccessSection = ({ parcelle, t }) => {
     setSending(false);
   };
 
-  const documentTypes = [
-    { key: 'acd', label: 'Arrêté de Concession Définitive (ACD)', icon: FileText },
-    { key: 'plan', label: 'Plan cadastral / Bornage', icon: MapPin },
-  ];
+  // Get icon based on document type
+  const getDocumentIcon = (docType) => {
+    switch (docType) {
+      case 'plan':
+        return MapPin;
+      case 'titre_foncier':
+        return Shield;
+      default:
+        return FileText;
+    }
+  };
 
   return (
     <div className="card-glass p-4">
