@@ -4,7 +4,7 @@
 Développer l'application web Songon Extension (extension de onegreendev.com) intégrant un Masterplan dynamique basé sur un fichier KMZ pour la vente de terrains à Songon M'Braté, Côte d'Ivoire.
 
 ## Choix Utilisateur
-- Authentification: JWT simple (admin/songon2024)
+- Authentification: JWT simple (admin/admin)
 - Thème: Mode "Nature" + **Thème Clair Prestigieux pour Masterplan**
 - Stockage: Fichier JSON local
 - Upload d'images: Oui
@@ -21,13 +21,13 @@ Développer l'application web Songon Extension (extension de onegreendev.com) in
 - **Base de données**: Fichier JSON (parcelles.json)
 - **Auth**: JWT (PyJWT)
 
-### Structure One-Page
+### Structure One-Page (Mise à jour 03/02/2026)
 ```
 HomePage.js contient:
-├── Section #accueil   → Hero + Stats
+├── Section #accueil   → Hero + Stats Bar
 ├── Section Why Invest → Features (dark theme)
-├── Section #masterplan → Carte interactive (light theme)
-├── Section #contact   → Formulaire + Coordonnées (dark theme)
+├── Section #masterplan → Filtres + Carte interactive (light theme)
+├── Section #contact   → Coordonnées uniquement (dark theme) [NETTOYÉ]
 └── Footer             → Liens + Copyright
 ```
 
@@ -53,14 +53,24 @@ HomePage.js contient:
 - ✅ Typographies: Playfair Display (titres), Montserrat (reste)
 - ✅ Badge "Made with Emergent" retiré du footer personnalisé
 
+### Nettoyage UI (03/02/2026) ✅
+- ✅ Section statistiques (4 cartes) supprimée du Masterplan
+- ✅ Formulaire de contact supprimé
+- ✅ Coordonnées conservées et centrées (Email, Téléphone, Adresse, Horaires)
+
 ### Fonctionnalités ✅
 - ✅ Carte interactive avec parcelles colorées
 - ✅ Fiche détaillée en sidebar
-- ✅ Formulaire de contact fonctionnel
 - ✅ Système codes d'accès documents
 - ✅ Dashboard admin complet
 
-## Ce qui a été implémenté (03/02/2026)
+## Ce qui a été implémenté
+
+### Version 1.3.0 - Nettoyage UI (03/02/2026)
+- Suppression de la section Quick Stats (4 cartes) dans Masterplan
+- Suppression du formulaire de contact
+- Conservation des coordonnées uniquement (centrées et élégantes)
+- Nettoyage du code (imports inutilisés supprimés)
 
 ### Version 1.2.0 - Architecture One-Page
 - Transformation complète en Single Page Application
@@ -72,8 +82,6 @@ HomePage.js contient:
 ### Typographie
 - Playfair Display: Titres principaux uniquement
 - Montserrat: Tout le reste (labels, textes, boutons)
-
-### Tests: 95-100% réussite
 
 ## Backlog Prioritaire
 
@@ -88,7 +96,10 @@ HomePage.js contient:
 ### P2 (Nice to have)
 - Mode offline avec Service Worker
 - Export PDF des fiches parcelles
-- Animations de transition entre sections
+- Animations parallax avancées
+
+## Note Importante
+Le badge "Made with Emergent" visible en bas à droite est injecté par la plateforme de déploiement Emergent et ne peut pas être supprimé via le code. Il ne sera pas présent lors du déploiement sur un serveur personnel.
 
 ## Prochaines Actions
 1. Intégrer un service d'email pour envoyer les codes
