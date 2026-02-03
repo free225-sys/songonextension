@@ -227,39 +227,74 @@ const FeatureCard = ({ icon: Icon, title, description, delay }) => (
   </motion.div>
 );
 
-// Map Legend Component
-const MapLegend = ({ t, filterStatus, setFilterStatus }) => (
-  <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-    <div className="flex flex-wrap items-center gap-4">
-      <div className="flex items-center gap-2">
-        <div className="w-4 h-4 rounded" style={{ background: 'rgba(34, 139, 34, 0.3)', border: '2px solid #228b22' }} />
-        <span className="font-montserrat text-gray-600 text-sm">{t('status_disponible')}</span>
+// Enhanced Map Controls Component
+const MapControls = ({ t, filterStatus, setFilterStatus, stats }) => {
+  const filterButtons = [
+    { value: 'all', label: t('masterplan_all'), count: stats.total, bgColor: 'bg-gray-800', textColor: 'text-white', borderColor: 'border-gray-700' },
+    { value: 'disponible', label: t('status_disponible'), count: stats.disponible, bgColor: 'bg-emerald-600', textColor: 'text-white', borderColor: 'border-emerald-500' },
+    { value: 'option', label: t('status_option'), count: stats.option, bgColor: 'bg-amber-500', textColor: 'text-white', borderColor: 'border-amber-400' },
+    { value: 'vendu', label: t('status_vendu'), count: stats.vendu, bgColor: 'bg-rose-600', textColor: 'text-white', borderColor: 'border-rose-500' },
+  ];
+
+  return (
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 mb-6">
+      {/* Filter Buttons */}
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="font-montserrat text-gray-500 text-sm font-medium hidden sm:block">
+          <Filter className="w-4 h-4 inline mr-1" />
+          Filtrer:
+        </span>
+        <div className="flex flex-wrap gap-2">
+          {filterButtons.map((btn) => (
+            <button
+              key={btn.value}
+              onClick={() => setFilterStatus(btn.value)}
+              data-testid={`filter-btn-${btn.value}`}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-full font-montserrat text-sm font-medium
+                transition-all duration-200 transform hover:scale-105
+                ${filterStatus === btn.value 
+                  ? `${btn.bgColor} ${btn.textColor} shadow-md ring-2 ring-offset-2 ${btn.borderColor}` 
+                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
+                }
+              `}
+            >
+              <span>{btn.label}</span>
+              <span className={`
+                px-2 py-0.5 rounded-full text-xs font-bold
+                ${filterStatus === btn.value 
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-gray-200 text-gray-600'
+                }
+              `}>
+                {btn.count}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <div className="w-4 h-4 rounded" style={{ background: 'rgba(210, 105, 30, 0.3)', border: '2px solid #d2691e' }} />
-        <span className="font-montserrat text-gray-600 text-sm">{t('status_option')}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <div className="w-4 h-4 rounded" style={{ background: 'rgba(178, 34, 34, 0.3)', border: '2px solid #b22222' }} />
-        <span className="font-montserrat text-gray-600 text-sm">{t('status_vendu')}</span>
+
+      {/* Legend */}
+      <div className="flex flex-wrap items-center gap-6 mt-4 pt-4 border-t border-gray-100">
+        <span className="font-montserrat text-gray-500 text-sm font-medium">Légende:</span>
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-md shadow-sm" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: '2px solid #047857' }} />
+            <span className="font-montserrat text-gray-700 text-sm font-medium">{t('status_disponible')}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-md shadow-sm" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', border: '2px solid #b45309' }} />
+            <span className="font-montserrat text-gray-700 text-sm font-medium">{t('status_option')}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-md shadow-sm" style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)', border: '2px solid #be123c' }} />
+            <span className="font-montserrat text-gray-700 text-sm font-medium">{t('status_vendu')}</span>
+          </div>
+        </div>
       </div>
     </div>
-    <div className="flex items-center gap-2">
-      <Filter className="w-4 h-4 text-gray-500" />
-      <select 
-        value={filterStatus}
-        onChange={(e) => setFilterStatus(e.target.value)}
-        className="font-montserrat text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500"
-        data-testid="filter-select"
-      >
-        <option value="all">{t('masterplan_all')}</option>
-        <option value="disponible">{t('status_disponible')}</option>
-        <option value="option">{t('status_option')}</option>
-        <option value="vendu">{t('status_vendu')}</option>
-      </select>
-    </div>
-  </div>
-);
+  );
+};
 
 // Map Loading Placeholder
 const MapLoadingPlaceholder = () => (
