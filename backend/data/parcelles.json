@@ -38,8 +38,8 @@
       ],
       "atouts": "Cadre naturel exceptionnel, rareté foncière, accessibilité",
       "positionnement": "Premium",
-      "prix_m2": 8500,
-      "valeur_globale": 1062500000,
+      "prix_m2": 8500.0,
+      "valeur_globale": 1062500000.0,
       "modalites": [
         "Vente totale",
         "Joint-venture"
@@ -97,7 +97,17 @@
       "center": [
         -4.29293729060873,
         5.3365075121048
-      ]
+      ],
+      "official_documents": {
+        "titre_foncier": {
+          "type": "titre_foncier",
+          "filename": "titre_foncier_0475198e.pdf",
+          "original_name": "TF 223737.pdf",
+          "path": "/app/backend/documents/tf-223737/titre_foncier_0475198e.pdf",
+          "uploaded_at": "2026-02-03T17:37:56.135697+00:00",
+          "uploaded_by": "admin"
+        }
+      }
     },
     {
       "id": "tf-223738",
