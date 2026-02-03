@@ -359,6 +359,42 @@ async def get_stats():
 
 # ==================== DOCUMENT ACCESS ROUTES ====================
 
+# Document type labels for display
+DOCUMENT_TYPE_LABELS = {
+    "acd": "Arrêté de Concession Définitive (ACD)",
+    "plan": "Plan cadastral / Bornage",
+    "extrait_cadastral": "Extrait cadastral",
+    "titre_foncier": "Titre Foncier",
+    "autre": "Document"
+}
+
+@api_router.get("/parcelles/{parcelle_id}/documents")
+async def get_available_documents(parcelle_id: str):
+    """Get list of available documents for a parcelle (public - shows what's available)"""
+    data = load_data()
+    for p in data.get("parcelles", []):
+        if p["id"] == parcelle_id:
+            official_docs = p.get("official_documents", {})
+            
+            # Build list of available documents
+            available = []
+            for doc_type, doc_info in official_docs.items():
+                available.append({
+                    "type": doc_type,
+                    "label": DOCUMENT_TYPE_LABELS.get(doc_type, doc_type.replace('_', ' ').title()),
+                    "has_file": True,
+                    "uploaded_at": doc_info.get("uploaded_at")
+                })
+            
+            return {
+                "parcelle_id": parcelle_id,
+                "parcelle_nom": p.get("nom", ""),
+                "available_documents": available,
+                "total_count": len(available)
+            }
+    
+    raise HTTPException(status_code=404, detail="Parcelle non trouvée")
+
 @api_router.post("/documents/verify-code")
 async def verify_document_code(request: AccessCodeVerify):
     """Verify access code for documents"""
