@@ -2,13 +2,11 @@ import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
 import { ParcelleDetail } from '../components/ParcelleDetail';
 import { 
   MapPin, ArrowRight, TreePine, TrendingUp, 
-  Shield, ChevronDown, Mail, Phone, Send, ExternalLink,
-  Menu, X, Globe, LogOut, Filter, Clock
+  Shield, ChevronDown, Mail, Phone, ExternalLink,
+  Menu, X, Globe, Filter, Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
