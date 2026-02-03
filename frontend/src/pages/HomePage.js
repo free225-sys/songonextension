@@ -601,31 +601,6 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          {/* Quick Stats Row */}
-          <motion.div 
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <div className="bg-white rounded-xl p-5 text-center shadow-md border-l-4 border-emerald-500">
-              <div className="font-playfair text-3xl font-bold text-emerald-600">{stats.disponible}</div>
-              <div className="font-montserrat text-gray-600 text-sm mt-1">{t('stats_disponible')}</div>
-            </div>
-            <div className="bg-white rounded-xl p-5 text-center shadow-md border-l-4 border-amber-500">
-              <div className="font-playfair text-3xl font-bold text-amber-600">{stats.option}</div>
-              <div className="font-montserrat text-gray-600 text-sm mt-1">{t('status_option')}</div>
-            </div>
-            <div className="bg-white rounded-xl p-5 text-center shadow-md border-l-4 border-rose-500">
-              <div className="font-playfair text-3xl font-bold text-rose-600">{stats.vendu}</div>
-              <div className="font-montserrat text-gray-600 text-sm mt-1">{t('status_vendu')}</div>
-            </div>
-            <div className="bg-white rounded-xl p-5 text-center shadow-md border-l-4 border-blue-500">
-              <div className="font-playfair text-3xl font-bold text-blue-600">{Math.round(stats.total_superficie)}+</div>
-              <div className="font-montserrat text-gray-600 text-sm mt-1">{t('stats_hectares')}</div>
-            </div>
-          </motion.div>
-
           {/* Enhanced Filter Controls */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -693,167 +668,90 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Contact Form */}
-            <motion.div 
-              className="card-glass p-8"
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
-              <form onSubmit={handleContactSubmit} className="space-y-5" data-testid="contact-form">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="font-montserrat text-gray-400 text-sm mb-2 block">Nom complet *</label>
-                    <Input
-                      value={contactForm.name}
-                      onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
-                      required
-                      className="input-dark"
-                      placeholder="Votre nom"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-montserrat text-gray-400 text-sm mb-2 block">Email *</label>
-                    <Input
-                      type="email"
-                      value={contactForm.email}
-                      onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
-                      required
-                      className="input-dark"
-                      placeholder="votre@email.com"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="font-montserrat text-gray-400 text-sm mb-2 block">Téléphone</label>
-                  <Input
-                    value={contactForm.phone}
-                    onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
-                    className="input-dark"
-                    placeholder="+225 XX XX XX XX"
-                  />
-                </div>
-                
-                <div>
-                  <label className="font-montserrat text-gray-400 text-sm mb-2 block">Message *</label>
-                  <Textarea
-                    value={contactForm.message}
-                    onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-                    required
-                    rows={4}
-                    className="input-dark resize-none"
-                    placeholder="Décrivez votre projet ou posez vos questions..."
-                  />
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="btn-primary w-full flex items-center justify-center gap-2"
-                  disabled={submitting}
-                  data-testid="submit-btn"
+          {/* Contact Info - Centered */}
+          <motion.div 
+            className="max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <div className="card-glass p-8">
+              <h3 className="font-playfair text-2xl font-semibold text-white mb-6 text-center">
+                Coordonnées
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <a 
+                  href="mailto:contact@onegreendev.com" 
+                  className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group"
                 >
-                  {submitting ? (
-                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      Envoyer le message
-                    </>
-                  )}
-                </Button>
-              </form>
-            </motion.div>
-
-            {/* Contact Info */}
-            <motion.div 
-              className="space-y-6"
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
-              <div className="card-glass p-6">
-                <h3 className="font-playfair text-xl font-semibold text-white mb-4">
-                  Coordonnées
-                </h3>
-                <div className="space-y-4">
-                  <a 
-                    href="mailto:contact@onegreendev.com" 
-                    className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                      <Mail className="w-5 h-5 text-green-400" />
-                    </div>
-                    <div>
-                      <span className="font-montserrat text-gray-400 text-xs block">Email</span>
-                      <span className="font-montserrat text-white group-hover:text-green-400 transition-colors">
-                        contact@onegreendev.com
-                      </span>
-                    </div>
-                  </a>
-                  
-                  <a 
-                    href="tel:+22507000000" 
-                    className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                      <Phone className="w-5 h-5 text-green-400" />
-                    </div>
-                    <div>
-                      <span className="font-montserrat text-gray-400 text-xs block">Téléphone</span>
-                      <span className="font-montserrat text-white group-hover:text-green-400 transition-colors">
-                        +225 07 00 00 00 00
-                      </span>
-                    </div>
-                  </a>
-                  
-                  <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg">
-                    <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                      <MapPin className="w-5 h-5 text-green-400" />
-                    </div>
-                    <div>
-                      <span className="font-montserrat text-gray-400 text-xs block">Adresse</span>
-                      <span className="font-montserrat text-white">
-                        Songon M'Braté, Abidjan<br />Côte d'Ivoire
-                      </span>
-                    </div>
+                  <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-green-400" />
                   </div>
-                  
-                  <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg">
-                    <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-green-400" />
-                    </div>
-                    <div>
-                      <span className="font-montserrat text-gray-400 text-xs block">Horaires</span>
-                      <span className="font-montserrat text-white">
-                        Lun - Ven: 8h00 - 18h00
-                      </span>
-                    </div>
+                  <div>
+                    <span className="font-montserrat text-gray-400 text-xs block">Email</span>
+                    <span className="font-montserrat text-white group-hover:text-green-400 transition-colors">
+                      contact@onegreendev.com
+                    </span>
+                  </div>
+                </a>
+                
+                <a 
+                  href="tel:+22507000000" 
+                  className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <Phone className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div>
+                    <span className="font-montserrat text-gray-400 text-xs block">Téléphone</span>
+                    <span className="font-montserrat text-white group-hover:text-green-400 transition-colors">
+                      +225 07 00 00 00 00
+                    </span>
+                  </div>
+                </a>
+                
+                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg">
+                  <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <MapPin className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div>
+                    <span className="font-montserrat text-gray-400 text-xs block">Adresse</span>
+                    <span className="font-montserrat text-white">
+                      Songon M'Braté, Abidjan<br />Côte d'Ivoire
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg">
+                  <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div>
+                    <span className="font-montserrat text-gray-400 text-xs block">Horaires</span>
+                    <span className="font-montserrat text-white">
+                      Lun - Ven: 8h00 - 18h00
+                    </span>
                   </div>
                 </div>
               </div>
-
-              <div className="card-glass p-6">
-                <h3 className="font-playfair text-xl font-semibold text-white mb-3">
-                  One Green Dev
-                </h3>
-                <p className="font-montserrat text-gray-400 text-sm leading-relaxed mb-4">
-                  Développeur & Aménageur Territorial en Côte d'Ivoire. 
-                  Nous développons des projets durables à forte valeur ajoutée.
+              
+              {/* One Green Dev Link */}
+              <div className="mt-6 pt-6 border-t border-white/10 text-center">
+                <p className="font-montserrat text-gray-400 text-sm mb-3">
+                  Développeur & Aménageur Territorial en Côte d'Ivoire
                 </p>
                 <a 
                   href="https://onegreendev.com" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 transition-colors font-montserrat text-sm"
+                  className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 transition-colors font-montserrat text-sm font-medium"
                 >
                   <ExternalLink className="w-4 h-4" />
                   Visiter onegreendev.com
                 </a>
               </div>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
