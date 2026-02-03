@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
@@ -8,9 +8,8 @@ import {
   Shield, ChevronDown, Mail, Phone, ExternalLink,
   Menu, X, Globe, Filter, Clock
 } from 'lucide-react';
-import { toast } from 'sonner';
 import axios from 'axios';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 // Lazy load the map component for better performance
 const MasterplanMap = lazy(() => import('../components/MasterplanMap'));
