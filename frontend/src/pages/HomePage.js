@@ -411,15 +411,6 @@ export default function HomePage() {
     setTimeout(() => setSelectedParcelle(null), 300);
   };
 
-  const handleContactSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast.success(t('msg_success'));
-    setContactForm({ name: '', email: '', phone: '', subject: '', message: '' });
-    setSubmitting(false);
-  };
-
   return (
     <div className="min-h-screen bg-[#050a07]" data-testid="home-page">
       <OnePageNavbar activeSection={activeSection} />
