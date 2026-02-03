@@ -345,12 +345,6 @@ export default function HomePage() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [activeSection, setActiveSection] = useState('accueil');
   const [mapLoaded, setMapLoaded] = useState(false);
-  
-  // Contact form state
-  const [contactForm, setContactForm] = useState({
-    name: '', email: '', phone: '', subject: '', message: ''
-  });
-  const [submitting, setSubmitting] = useState(false);
 
   // Intersection Observer for active section
   useEffect(() => {
