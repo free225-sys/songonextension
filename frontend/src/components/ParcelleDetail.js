@@ -82,8 +82,12 @@ const DocumentAccessSection = ({ parcelle, t }) => {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [clientInfo, setClientInfo] = useState(null);
   const [verifying, setVerifying] = useState(false);
-  const [showLegalNotice, setShowLegalNotice] = useState(false);
+  const [showOptionsDialog, setShowOptionsDialog] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
+  const [sendMethod, setSendMethod] = useState(null);
+  const [recipient, setRecipient] = useState('');
+  const [sending, setSending] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const verifyCode = async () => {
     if (!accessCode.trim()) {
@@ -101,7 +105,9 @@ const DocumentAccessSection = ({ parcelle, t }) => {
       if (response.data.valid) {
         setIsUnlocked(true);
         setClientInfo(response.data);
-        toast.success('Accès autorisé');
+        toast.success(`Bienvenue ${response.data.client_name}`, {
+          description: 'Vous pouvez maintenant consulter les documents'
+        });
       }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Code invalide ou expiré');
@@ -109,48 +115,85 @@ const DocumentAccessSection = ({ parcelle, t }) => {
     setVerifying(false);
   };
 
-  const handleDocumentAccess = async (docType) => {
-    setSelectedDocument(docType);
-    setShowLegalNotice(true);
+  const handleDocumentAccess = (docType, docLabel) => {
+    setSelectedDocument({ type: docType, label: docLabel });
+    setShowOptionsDialog(true);
+    setSendMethod(null);
+    setRecipient('');
   };
 
-  const confirmDownload = async () => {
+  const handlePreview = async () => {
     if (!selectedDocument) return;
-
+    
     try {
-      const response = await axios.get(
-        `${API}/documents/${parcelle.id}/${selectedDocument}?code=${accessCode}`
-      );
-
-      // Show watermark info
-      toast.success(
-        <div className="text-sm">
-          <p className="font-medium">Document accessible</p>
-          <p className="text-xs text-gray-400 mt-1">
-            Filigrane: {response.data.watermark}
-          </p>
-        </div>,
-        { duration: 5000 }
-      );
-
-      setShowLegalNotice(false);
-      setSelectedDocument(null);
+      const url = `${API}/documents/${parcelle.id}/${selectedDocument.type}?code=${accessCode}&action=preview`;
+      setPreviewUrl(url);
+      toast.success('Document en cours de chargement...');
+      
+      // Open in new tab for preview
+      window.open(url, '_blank');
     } catch (error) {
-      toast.error('Erreur lors de l\'accès au document');
+      toast.error('Erreur lors de la prévisualisation');
     }
   };
 
-  const documentTypes = [
-    { key: 'ACD', label: 'Arrêté de Concession Définitive', icon: FileText },
-    { key: 'plan_bornage', label: 'Plan de bornage', icon: MapPin },
-    { key: 'plan_situation', label: 'Plan de situation', icon: MapPin },
-    { key: 'extrait_cadastral', label: 'Extrait cadastral', icon: FileText },
-  ];
+  const handleDownload = async () => {
+    if (!selectedDocument) return;
+    
+    try {
+      const url = `${API}/documents/${parcelle.id}/${selectedDocument.type}?code=${accessCode}&action=download`;
+      
+      // Create a link and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${selectedDocument.type}_${parcelle.nom}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Téléchargement démarré', {
+        description: `Document avec filigrane pour ${clientInfo?.client_name}`
+      });
+    } catch (error) {
+      toast.error('Erreur lors du téléchargement');
+    }
+  };
 
-  const availableDocs = documentTypes.filter(doc => 
-    parcelle.documents?.includes(doc.label.split(' ')[0]) || 
-    parcelle.documents?.includes(doc.key)
-  );
+  const handleSendDocument = async () => {
+    if (!sendMethod || !recipient.trim()) {
+      toast.error('Veuillez remplir tous les champs');
+      return;
+    }
+
+    setSending(true);
+    try {
+      const formData = new FormData();
+      formData.append('parcelle_id', parcelle.id);
+      formData.append('document_type', selectedDocument.type);
+      formData.append('code', accessCode);
+      formData.append('send_method', sendMethod);
+      formData.append('recipient', recipient);
+
+      const response = await axios.post(`${API}/documents/send`, formData);
+      
+      if (sendMethod === 'whatsapp' && response.data.whatsapp_url) {
+        window.open(response.data.whatsapp_url, '_blank');
+      }
+      
+      toast.success(response.data.message);
+      setShowOptionsDialog(false);
+      setSendMethod(null);
+      setRecipient('');
+    } catch (error) {
+      toast.error('Erreur lors de l\'envoi');
+    }
+    setSending(false);
+  };
+
+  const documentTypes = [
+    { key: 'acd', label: 'Arrêté de Concession Définitive (ACD)', icon: FileText },
+    { key: 'plan', label: 'Plan cadastral / Bornage', icon: MapPin },
+  ];
 
   return (
     <div className="card-glass p-4">
@@ -178,10 +221,10 @@ const DocumentAccessSection = ({ parcelle, t }) => {
               <Lock className="w-8 h-8 text-amber-500" />
             </div>
             <h4 className="font-playfair text-lg font-semibold text-white mb-2">
-              Documents Sécurisés
+              Documents Officiels Sécurisés
             </h4>
             <p className="text-gray-400 text-sm mb-4">
-              Entrez votre code d'accès pour consulter les documents officiels.
+              L'accès aux documents ACD et plans cadastraux nécessite un code d'accès unique.
             </p>
 
             <div className="flex gap-2 max-w-xs mx-auto">
@@ -191,6 +234,7 @@ const DocumentAccessSection = ({ parcelle, t }) => {
                 placeholder="CODE D'ACCÈS"
                 className="input-dark text-center font-mono tracking-widest"
                 maxLength={8}
+                onKeyPress={(e) => e.key === 'Enter' && verifyCode()}
                 data-testid="document-access-code"
               />
               <Button 
@@ -208,7 +252,7 @@ const DocumentAccessSection = ({ parcelle, t }) => {
             </div>
 
             <p className="text-gray-500 text-xs mt-4">
-              Pas de code ? <button className="text-green-400 hover:underline">Demander l'accès</button>
+              Pas de code ? Contactez-nous pour demander l'accès.
             </p>
           </div>
         ) : (
@@ -225,89 +269,166 @@ const DocumentAccessSection = ({ parcelle, t }) => {
               </div>
             </div>
 
+            {/* Watermark Notice */}
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+              <p className="text-amber-400 text-xs flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                <span>Tous les documents seront marqués d'un filigrane avec votre nom pour traçabilité.</span>
+              </p>
+            </div>
+
             {/* Document List */}
             <div className="space-y-2">
-              {availableDocs.length > 0 ? (
-                availableDocs.map((doc) => (
-                  <button
-                    key={doc.key}
-                    onClick={() => handleDocumentAccess(doc.key)}
-                    className="w-full flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group"
-                    data-testid={`doc-${doc.key}`}
-                  >
-                    <doc.icon className="w-4 h-4 text-green-400" />
-                    <span className="flex-1 text-left text-white text-sm">{doc.label}</span>
-                    <Eye className="w-4 h-4 text-gray-500 group-hover:text-green-400 transition-colors" />
-                  </button>
-                ))
-              ) : (
-                <p className="text-gray-500 text-sm text-center py-4">
-                  Aucun document disponible pour cette parcelle
-                </p>
-              )}
+              {documentTypes.map((doc) => (
+                <button
+                  key={doc.key}
+                  onClick={() => handleDocumentAccess(doc.key, doc.label)}
+                  className="w-full flex items-center gap-3 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group border border-white/5 hover:border-green-500/30"
+                  data-testid={`doc-${doc.key}`}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                    <doc.icon className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <span className="text-white text-sm font-medium block">{doc.label}</span>
+                    <span className="text-gray-500 text-xs">Cliquer pour accéder</span>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-gray-500 group-hover:text-green-400 transition-colors" />
+                </button>
+              ))}
             </div>
 
             {/* Re-lock option */}
             <button 
               onClick={() => { setIsUnlocked(false); setAccessCode(''); setClientInfo(null); }}
-              className="text-gray-500 text-xs hover:text-gray-400 transition-colors"
+              className="text-gray-500 text-xs hover:text-gray-400 transition-colors flex items-center gap-1"
             >
-              <Lock className="w-3 h-3 inline mr-1" />
+              <Lock className="w-3 h-3" />
               Verrouiller l'accès
             </button>
           </div>
         )}
       </div>
 
-      {/* Legal Notice Modal */}
-      {showLegalNotice && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1100] flex items-center justify-center p-4">
-          <div className="bg-[#0d1410] border border-white/10 rounded-2xl max-w-md w-full p-6 animate-fade-in">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-amber-500" />
+      {/* Document Options Dialog */}
+      <Dialog open={showOptionsDialog} onOpenChange={setShowOptionsDialog}>
+        <DialogContent className="bg-[#0d1410] border-white/10 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white font-playfair flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-green-400" />
               </div>
-              <div>
-                <h3 className="font-playfair text-lg font-semibold text-white">
-                  Avertissement Légal
-                </h3>
-                <p className="text-gray-400 text-sm">Confidentialité des documents</p>
+              {selectedDocument?.label}
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Document préparé pour <span className="text-green-400 font-medium">{clientInfo?.client_name}</span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Watermark Notice */}
+            <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-amber-400 text-sm font-medium mb-1">Avertissement légal</p>
+                  <p className="text-gray-400 text-xs leading-relaxed">
+                    Ce document est <strong className="text-white">strictement confidentiel</strong>. 
+                    Un filigrane numérique sera appliqué avec votre identifiant pour traçabilité. 
+                    Toute diffusion non autorisée est interdite.
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="legal-banner rounded-lg p-4 mb-4">
-              <p className="text-sm leading-relaxed">
-                Ce document est <strong>strictement confidentiel</strong> et destiné uniquement à l'usage du destinataire identifié. 
-                Toute reproduction, diffusion ou utilisation non autorisée est <strong>interdite</strong> et pourra faire l'objet de poursuites judiciaires.
-              </p>
-            </div>
-
-            <div className="bg-white/5 rounded-lg p-3 mb-4">
-              <p className="text-xs text-gray-400">
-                <strong className="text-white">Filigrane numérique :</strong> Ce document sera marqué avec votre identifiant unique ({clientInfo?.client_name}) pour traçabilité.
-              </p>
-            </div>
-
-            <div className="flex gap-3">
+            {/* Options */}
+            <div className="space-y-3">
+              <p className="text-gray-400 text-sm font-medium">Comment souhaitez-vous recevoir le document ?</p>
+              
+              {/* Preview Button */}
               <Button
+                onClick={handlePreview}
                 variant="outline"
-                onClick={() => { setShowLegalNotice(false); setSelectedDocument(null); }}
-                className="flex-1"
+                className="w-full justify-start gap-3 border-white/10 hover:bg-white/5"
+                data-testid="preview-doc-btn"
               >
-                Annuler
+                <Eye className="w-5 h-5 text-blue-400" />
+                <div className="text-left">
+                  <span className="text-white block">Visualiser avec filigrane</span>
+                  <span className="text-gray-500 text-xs">Aperçu dans un nouvel onglet</span>
+                </div>
               </Button>
+
+              {/* Download Button */}
               <Button
-                onClick={confirmDownload}
-                className="flex-1 btn-primary"
-                data-testid="confirm-download"
+                onClick={handleDownload}
+                variant="outline"
+                className="w-full justify-start gap-3 border-white/10 hover:bg-white/5"
+                data-testid="download-doc-btn"
               >
-                <Download className="w-4 h-4 mr-2" />
-                J'accepte et télécharge
+                <Download className="w-5 h-5 text-green-400" />
+                <div className="text-left">
+                  <span className="text-white block">Télécharger le PDF marqué</span>
+                  <span className="text-gray-500 text-xs">Fichier PDF avec filigrane</span>
+                </div>
               </Button>
+
+              {/* Send Options */}
+              <div className="border-t border-white/10 pt-4 mt-4">
+                <p className="text-gray-400 text-xs mb-3">Ou recevoir par :</p>
+                
+                <div className="flex gap-2 mb-3">
+                  <Button
+                    onClick={() => setSendMethod('email')}
+                    variant={sendMethod === 'email' ? 'default' : 'outline'}
+                    size="sm"
+                    className={sendMethod === 'email' ? 'bg-green-500 text-black' : 'border-white/10'}
+                  >
+                    <Mail className="w-4 h-4 mr-1" />
+                    Email
+                  </Button>
+                  <Button
+                    onClick={() => setSendMethod('whatsapp')}
+                    variant={sendMethod === 'whatsapp' ? 'default' : 'outline'}
+                    size="sm"
+                    className={sendMethod === 'whatsapp' ? 'bg-green-500 text-black' : 'border-white/10'}
+                  >
+                    <MessageCircle className="w-4 h-4 mr-1" />
+                    WhatsApp
+                  </Button>
+                </div>
+
+                {sendMethod && (
+                  <div className="space-y-3 animate-fade-in">
+                    <Input
+                      value={recipient}
+                      onChange={(e) => setRecipient(e.target.value)}
+                      placeholder={sendMethod === 'email' ? 'votre@email.com' : '+225 07 XX XX XX XX'}
+                      className="input-dark"
+                      data-testid="recipient-input"
+                    />
+                    <Button
+                      onClick={handleSendDocument}
+                      disabled={sending || !recipient.trim()}
+                      className="w-full btn-primary"
+                      data-testid="send-doc-btn"
+                    >
+                      {sending ? (
+                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Envoyer le document
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
