@@ -953,12 +953,46 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
                     </tr>
                   );
                 })
-                ))
               )}
             </tbody>
           </table>
         </div>
       </motion.div>
+
+      {/* Code Usage Details Dialog */}
+      <Dialog open={!!selectedCodeDetails} onOpenChange={() => setSelectedCodeDetails(null)}>
+        <DialogContent className="bg-[#0d1410] border-white/10 max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-white font-playfair flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-purple-400" />
+              </div>
+              Documents consultés
+            </DialogTitle>
+            <DialogDescription className="text-gray-400 font-montserrat">
+              Client: <span className="text-white">{selectedCodeDetails?.client}</span> • Code: <span className="text-green-400 font-mono">{selectedCodeDetails?.code}</span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="max-h-64 overflow-y-auto space-y-2 py-4">
+            {selectedCodeDetails?.logs?.map((log, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Download className="w-4 h-4 text-purple-400" />
+                  <div>
+                    <p className="text-white text-sm font-medium">{log.document_type?.toUpperCase()}</p>
+                    <p className="text-gray-500 text-xs">Parcelle: {log.parcelle_id}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-gray-400 text-xs">{new Date(log.timestamp).toLocaleDateString('fr-FR')}</p>
+                  <p className="text-gray-500 text-xs">{new Date(log.timestamp).toLocaleTimeString('fr-FR')}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
