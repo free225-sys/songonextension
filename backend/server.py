@@ -405,7 +405,8 @@ async def request_document_access(
 async def get_document_with_watermark(
     parcelle_id: str,
     document_type: str,
-    code: str
+    code: str,
+    action: str = Query("preview", description="preview, download, or info")
 ):
     """Get document with watermark (requires valid access code)"""
     access_info = verify_access_code(code, parcelle_id)
@@ -413,28 +414,125 @@ async def get_document_with_watermark(
     if not access_info:
         raise HTTPException(status_code=403, detail="Code d'accès invalide ou expiré")
     
-    # Log the download
+    # Get parcelle info
+    data = load_data()
+    parcelle = None
+    for p in data.get("parcelles", []):
+        if p["id"] == parcelle_id:
+            parcelle = p
+            break
+    
+    if not parcelle:
+        raise HTTPException(status_code=404, detail="Parcelle non trouvée")
+    
+    client_name = access_info["client_name"]
+    
+    # Log the access
     log_download(
         code=code,
-        client_name=access_info["client_name"],
+        client_name=client_name,
         parcelle_id=parcelle_id,
         document_type=document_type,
         document_name=f"{document_type}_{parcelle_id}"
     )
     
-    # For now, return document info with watermark data
-    # In production, you would generate a watermarked PDF/image here
-    watermark_text = f"Document confidentiel - Code: {code} - {access_info['client_name']}"
+    # If just requesting info
+    if action == "info":
+        return {
+            "document_type": document_type,
+            "parcelle_id": parcelle_id,
+            "parcelle_nom": parcelle.get("nom", ""),
+            "access_granted": True,
+            "accessed_by": client_name,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "download_url": f"/api/documents/{parcelle_id}/{document_type}?code={code}&action=download",
+            "preview_url": f"/api/documents/{parcelle_id}/{document_type}?code={code}&action=preview"
+        }
     
-    return {
-        "document_type": document_type,
-        "parcelle_id": parcelle_id,
-        "watermark": watermark_text,
-        "access_granted": True,
-        "accessed_by": access_info["client_name"],
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "legal_notice": "Ce document est strictement confidentiel. Toute reproduction ou diffusion non autorisée est interdite et pourra faire l'objet de poursuites."
-    }
+    # Generate watermarked PDF
+    if document_type == "acd":
+        pdf_content = create_placeholder_acd_pdf(
+            parcelle_nom=parcelle.get("nom", "Parcelle"),
+            parcelle_ref=parcelle.get("reference_tf", "N/A"),
+            client_name=client_name,
+            access_code=code
+        )
+        filename = f"ACD_{parcelle.get('nom', parcelle_id).replace(' ', '_')}.pdf"
+    elif document_type == "plan":
+        pdf_content = create_placeholder_plan_pdf(
+            parcelle_nom=parcelle.get("nom", "Parcelle"),
+            parcelle_ref=parcelle.get("reference_tf", "N/A"),
+            superficie=parcelle.get("superficie", 0),
+            client_name=client_name,
+            access_code=code
+        )
+        filename = f"Plan_{parcelle.get('nom', parcelle_id).replace(' ', '_')}.pdf"
+    else:
+        raise HTTPException(status_code=400, detail="Type de document non supporté")
+    
+    # Return as streaming response
+    if action == "download":
+        return StreamingResponse(
+            BytesIO(pdf_content),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "X-Watermark": f"Document pour {client_name}"
+            }
+        )
+    else:  # preview
+        return StreamingResponse(
+            BytesIO(pdf_content),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'inline; filename="{filename}"',
+                "X-Watermark": f"Document pour {client_name}"
+            }
+        )
+
+
+@api_router.post("/documents/send")
+async def send_document(
+    parcelle_id: str = Form(...),
+    document_type: str = Form(...),
+    code: str = Form(...),
+    send_method: str = Form(...),  # email or whatsapp
+    recipient: str = Form(...)  # email address or phone number
+):
+    """Send document via email or WhatsApp"""
+    access_info = verify_access_code(code, parcelle_id)
+    
+    if not access_info:
+        raise HTTPException(status_code=403, detail="Code d'accès invalide ou expiré")
+    
+    # Log the send action
+    log_download(
+        code=code,
+        client_name=access_info["client_name"],
+        parcelle_id=parcelle_id,
+        document_type=f"{document_type}_sent_via_{send_method}",
+        document_name=f"{document_type}_{parcelle_id}_to_{recipient}"
+    )
+    
+    # In production, integrate with email/WhatsApp API
+    # For now, return success with instructions
+    if send_method == "email":
+        return {
+            "success": True,
+            "message": f"Document envoyé par email à {recipient}",
+            "note": "En production, le document serait envoyé via un service d'email (SendGrid, etc.)"
+        }
+    elif send_method == "whatsapp":
+        # WhatsApp Business API would be used here
+        whatsapp_url = f"https://wa.me/{recipient.replace('+', '')}?text=Votre%20document%20{document_type}%20est%20prêt"
+        return {
+            "success": True,
+            "message": f"Lien WhatsApp généré pour {recipient}",
+            "whatsapp_url": whatsapp_url,
+            "note": "En production, utilisez l'API WhatsApp Business pour un envoi automatique"
+        }
+    else:
+        raise HTTPException(status_code=400, detail="Méthode d'envoi non supportée")
 
 # ==================== AUTH ROUTES ====================
 
