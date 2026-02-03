@@ -395,8 +395,8 @@ const DocumentAccessSection = ({ parcelle, t }) => {
               >
                 <Eye className="w-5 h-5 text-blue-400" />
                 <div className="text-left">
-                  <span className="text-white block">Visualiser avec filigrane</span>
-                  <span className="text-gray-500 text-xs">Aperçu dans un nouvel onglet</span>
+                  <span className="text-white block">Visualiser {selectedDocument?.label}</span>
+                  <span className="text-gray-500 text-xs">Aperçu avec filigrane dans un nouvel onglet</span>
                 </div>
               </Button>
 
@@ -409,7 +409,7 @@ const DocumentAccessSection = ({ parcelle, t }) => {
               >
                 <Download className="w-5 h-5 text-green-400" />
                 <div className="text-left">
-                  <span className="text-white block">Télécharger le PDF marqué</span>
+                  <span className="text-white block">Télécharger {selectedDocument?.label}</span>
                   <span className="text-gray-500 text-xs">Fichier PDF avec filigrane</span>
                 </div>
               </Button>
