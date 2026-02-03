@@ -4,7 +4,7 @@ import {
   X, MapPin, Ruler, TreePine, FileText, DollarSign, 
   TrendingUp, Image, Phone, Mail, Download, CheckCircle,
   Building, Mountain, Leaf, Lock, Unlock, Shield, AlertTriangle,
-  KeyRound, Eye
+  KeyRound, Eye, Send, MessageCircle, ExternalLink
 } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
@@ -12,6 +12,13 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Separator } from './ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from './ui/dialog';
 import { toast } from 'sonner';
 import axios from 'axios';
 
