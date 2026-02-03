@@ -32,7 +32,9 @@ UPLOADS_DIR.mkdir(exist_ok=True)
 DOCUMENTS_DIR.mkdir(exist_ok=True)
 
 # JWT Configuration
-JWT_SECRET = os.environ.get('JWT_SECRET', 'songon-extension-secret-key-2024')
+JWT_SECRET = os.environ.get('JWT_SECRET')
+if not JWT_SECRET:
+    raise ValueError("JWT_SECRET environment variable must be set")
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRATION_HOURS = 24
 
@@ -441,8 +443,14 @@ async def login(request: LoginRequest):
     data = load_data()
     admin = data.get("admin", {})
     
-    # Default admin credentials for demo
-    if request.username == "admin" and request.password == "songon2024":
+    # Get admin credentials from environment variables
+    admin_username = os.environ.get('ADMIN_USERNAME')
+    admin_password = os.environ.get('ADMIN_PASSWORD')
+    
+    if not admin_username or not admin_password:
+        raise HTTPException(status_code=500, detail="Admin credentials not configured")
+    
+    if request.username == admin_username and request.password == admin_password:
         token = create_token(request.username)
         return LoginResponse(token=token, username=request.username)
     
