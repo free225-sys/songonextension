@@ -183,17 +183,6 @@ const OnePageNavbar = ({ activeSection }) => {
               </button>
             </div>
 
-            {/* Admin Link */}
-            {isAuthenticated && (
-              <a
-                href="/admin"
-                data-testid="nav-admin"
-                className="hidden md:block text-sm font-montserrat font-medium text-green-400 hover:text-green-300 transition-colors"
-              >
-                Admin
-              </a>
-            )}
-
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -253,6 +242,78 @@ const OnePageNavbar = ({ activeSection }) => {
         </div>
       )}
     </nav>
+
+    {/* Secret Login Modal */}
+    <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
+      <DialogContent className="bg-[#0d1410] border-white/10 max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-white font-playfair text-xl flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+              <Lock className="w-5 h-5 text-black" />
+            </div>
+            Espace Administration
+          </DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleLogin} className="space-y-4 pt-4">
+          <div>
+            <label className="font-montserrat text-gray-400 text-sm mb-2 block">
+              Identifiant
+            </label>
+            <Input
+              type="text"
+              value={loginForm.username}
+              onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+              className="input-dark"
+              placeholder="Entrez votre identifiant"
+              required
+              data-testid="login-username"
+            />
+          </div>
+          
+          <div>
+            <label className="font-montserrat text-gray-400 text-sm mb-2 block">
+              Mot de passe
+            </label>
+            <div className="relative">
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                className="input-dark pr-10"
+                placeholder="Entrez votre mot de passe"
+                required
+                data-testid="login-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+          
+          <Button
+            type="submit"
+            className="btn-primary w-full"
+            disabled={loginLoading}
+            data-testid="login-submit"
+          >
+            {loginLoading ? (
+              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <Lock className="w-4 h-4 mr-2" />
+                Se connecter
+              </>
+            )}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 
