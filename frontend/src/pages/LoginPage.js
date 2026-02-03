@@ -124,13 +124,6 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-white/5 rounded-lg">
-            <p className="text-gray-500 text-xs text-center">
-              Demo: <span className="text-green-400">admin</span> / <span className="text-green-400">songon2024</span>
-            </p>
-          </div>
         </div>
 
         {/* Back Link */}
