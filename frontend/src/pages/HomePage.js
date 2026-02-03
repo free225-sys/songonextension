@@ -36,9 +36,16 @@ const scrollToSection = (sectionId) => {
 // One-Page Navbar with anchor navigation
 const OnePageNavbar = ({ activeSection }) => {
   const { t, language, setLanguage } = useLanguage();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, login } = useAuth();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const clickCountRef = useRef(0);
+  const clickTimerRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,6 +55,52 @@ const OnePageNavbar = ({ activeSection }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Handle secret double-click on logo
+  const handleLogoClick = () => {
+    clickCountRef.current += 1;
+    
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+    }
+    
+    if (clickCountRef.current === 2) {
+      // Double-click detected - show login modal
+      clickCountRef.current = 0;
+      if (isAuthenticated) {
+        navigate('/admin');
+      } else {
+        setShowLoginModal(true);
+      }
+    } else {
+      // Reset after 400ms if no second click
+      clickTimerRef.current = setTimeout(() => {
+        clickCountRef.current = 0;
+        scrollToSection('accueil');
+      }, 400);
+    }
+  };
+
+  // Handle login submission
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    
+    try {
+      const success = await login(loginForm.username, loginForm.password);
+      if (success) {
+        setShowLoginModal(false);
+        setLoginForm({ username: '', password: '' });
+        toast.success('Connexion réussie');
+        navigate('/admin');
+      } else {
+        toast.error('Identifiants incorrects');
+      }
+    } catch (error) {
+      toast.error('Erreur de connexion');
+    }
+    setLoginLoading(false);
+  };
+
   const navLinks = [
     { id: 'accueil', label: t('nav_home') },
     { id: 'masterplan', label: t('nav_masterplan') },
@@ -55,58 +108,59 @@ const OnePageNavbar = ({ activeSection }) => {
   ];
 
   return (
-    <nav 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-black/90 backdrop-blur-lg shadow-lg' : 'bg-transparent'
-      }`} 
-      data-testid="navbar"
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
-          {/* Logo */}
-          <button 
-            onClick={() => scrollToSection('accueil')} 
-            className="flex items-center gap-3 group"
-            data-testid="logo-link"
-          >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-black" strokeWidth={2.5} />
-            </div>
-            <div className="hidden sm:block">
-              <span className="font-playfair text-lg font-semibold text-white group-hover:text-green-400 transition-colors">
-                Songon
-              </span>
-              <span className="font-montserrat text-xs text-green-400 block -mt-1">Extension</span>
-            </div>
-          </button>
+    <>
+      <nav 
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          scrolled ? 'bg-black/90 backdrop-blur-lg shadow-lg' : 'bg-transparent'
+        }`} 
+        data-testid="navbar"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 lg:h-20">
+            {/* Logo - Double-click for secret admin access */}
+            <button 
+              onClick={handleLogoClick}
+              className="flex items-center gap-3 group select-none"
+              data-testid="logo-link"
+            >
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                <MapPin className="w-5 h-5 text-black" strokeWidth={2.5} />
+              </div>
+              <div className="hidden sm:block">
+                <span className="font-playfair text-lg font-semibold text-white group-hover:text-green-400 transition-colors">
+                  Songon
+                </span>
+                <span className="font-montserrat text-xs text-green-400 block -mt-1">Extension</span>
+              </div>
+            </button>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <button
-                key={link.id}
-                onClick={() => scrollToSection(link.id)}
-                data-testid={`nav-${link.id}`}
-                className={`font-montserrat text-sm font-medium transition-colors relative py-2 ${
-                  activeSection === link.id
-                    ? 'text-green-400'
-                    : 'text-gray-300 hover:text-white'
-                }`}
-              >
-                {link.label}
-                {activeSection === link.id && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-400 rounded-full" />
-                )}
-              </button>
-            ))}
-          </div>
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-8">
+              {navLinks.map((link) => (
+                <button
+                  key={link.id}
+                  onClick={() => scrollToSection(link.id)}
+                  data-testid={`nav-${link.id}`}
+                  className={`font-montserrat text-sm font-medium transition-colors relative py-2 ${
+                    activeSection === link.id
+                      ? 'text-green-400'
+                      : 'text-gray-300 hover:text-white'
+                  }`}
+                >
+                  {link.label}
+                  {activeSection === link.id && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-400 rounded-full" />
+                  )}
+                </button>
+              ))}
+            </div>
 
-          {/* Right Side */}
-          <div className="flex items-center gap-4">
-            {/* Language Switcher */}
-            <div className="hidden sm:flex items-center gap-1 bg-white/5 rounded-full p-1">
-              <button
-                onClick={() => setLanguage('fr')}
+            {/* Right Side */}
+            <div className="flex items-center gap-4">
+              {/* Language Switcher */}
+              <div className="hidden sm:flex items-center gap-1 bg-white/5 rounded-full p-1">
+                <button
+                  onClick={() => setLanguage('fr')}
                 data-testid="lang-fr"
                 className={`px-3 py-1.5 text-xs font-montserrat font-medium rounded-full transition-all ${
                   language === 'fr'
