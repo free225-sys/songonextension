@@ -9,7 +9,7 @@ Développer l'application web Songon Extension (extension de onegreendev.com) in
 - Stockage: Fichier JSON local
 - Upload d'images: Oui
 - Multi-langue: Bilingue FR/EN
-- Sécurité documents: Codes d'accès + Watermarking + Journal
+- Sécurité documents: **Codes d'accès + Watermarking dynamique + Journal**
 - **Architecture: ONE-PAGE avec navigation fluide par ancres**
 - **Accès admin: CACHÉ (double-clic logo)**
 
@@ -22,61 +22,61 @@ Développer l'application web Songon Extension (extension de onegreendev.com) in
 - **Base de données**: Fichier JSON (parcelles.json)
 - **Auth**: JWT (PyJWT)
 - **Export**: jsPDF + jspdf-autotable + xlsx + file-saver
+- **PDF Watermark**: PyPDF2 + ReportLab
 
-### Structure One-Page
+### Système d'Accès aux Documents (ACD)
 ```
-HomePage.js contient:
-├── Section #accueil   → Hero + Stats Bar
-├── Section Why Invest → Features (dark theme)
-├── Section #masterplan → Filtres + Carte interactive (light theme)
-├── Section #contact   → Coordonnées uniquement (dark theme)
-└── Footer             → Liens + Copyright
+Tunnel d'accès:
+1. Documents bloqués par défaut (icône cadenas)
+2. Visiteur entre son code d'accès
+3. Vérification API → Déverrouillage
+4. Choix: Visualiser | Télécharger | Email/WhatsApp
+5. PDF généré avec filigrane dynamique (nom client + code + date)
+6. Accès journalisé dans download_logs
 ```
-
-### Accès Admin (Secret)
-- Double-clic sur le logo → Modal de connexion
-- Pas de lien visible dans la navigation
-- Identifiants stockés dans .env (ADMIN_USERNAME, ADMIN_PASSWORD)
 
 ## Ce qui a été implémenté
 
-### Version 1.4.0 - Dashboard Admin Modernisé + Export (03/02/2026)
-- **Accès admin caché**: Double-clic sur le logo ouvre un modal de connexion
-- **Dashboard modernisé**: Design glassmorphism avec cartes statistiques animées
-- **Export PDF**: Rapport professionnel avec en-tête Songon Extension
-- **Export Excel**: Fichier .xlsx avec toutes les données des parcelles
-- **Sidebar élégante**: Navigation admin avec animations
-- **Page login nettoyée**: Suppression des identifiants demo visibles
+### Version 1.5.0 - Système Complet Documents ACD (03/02/2026)
+- **Tunnel d'accès sécurisé**: Documents bloqués par défaut, code requis
+- **Watermarking dynamique**: Filigrane avec nom du client sur chaque page PDF
+- **Options de réception**: Visualiser, Télécharger, Email, WhatsApp
+- **Backend PDF**: Génération de documents placeholder avec filigrane (PyPDF2 + ReportLab)
+- **Dashboard Admin amélioré**: Colonne "Docs consultés" avec détails par code
 
-### Version 1.3.0 - Nettoyage UI (03/02/2026)
-- Suppression de la section Quick Stats (4 cartes) dans Masterplan
-- Suppression du formulaire de contact
-- Conservation des coordonnées uniquement (centrées et élégantes)
+### Version 1.4.0 - Dashboard Admin Modernisé + Export
+- Accès admin caché: Double-clic sur le logo
+- Dashboard modernisé: Design glassmorphism
+- Export PDF/Excel des parcelles
 
-### Version 1.2.0 - Architecture One-Page
-- Transformation complète en Single Page Application
-- Navigation fluide avec ancres internes
-- Lazy loading de la carte (optimisation scroll)
+### Version 1.3.0 - Nettoyage UI
+- Suppression section statistiques et formulaire contact
+- UI simplifiée
+
+## Endpoints API Documents
+
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/api/documents/verify-code` | POST | Vérifie un code d'accès |
+| `/api/documents/{parcelle_id}/{type}` | GET | Récupère document avec watermark |
+| `/api/documents/send` | POST | Envoie document par email/WhatsApp |
+| `/api/admin/download-logs` | GET | Journal des téléchargements |
 
 ## Backlog Prioritaire
 
 ### P0 (Critique)
-- (Aucun - toutes les fonctionnalités critiques sont implémentées)
+- (Terminé)
 
 ### P1 (Important)
-- Envoi d'emails avec codes d'accès
-- PDF watermarkés côté serveur
-- Notifications en temps réel
+- Intégration vraie email (SendGrid/Resend) pour envoi automatique
+- Intégration WhatsApp Business API
+- Vrais documents PDF uploadés (remplacer placeholders)
 
 ### P2 (Nice to have)
-- Mode offline avec Service Worker
-- Export PDF des fiches parcelles individuelles
-- Animations parallax avancées
+- QR Code sur documents pour vérification
+- Système de demande d'accès public
+- Notifications push admin
 
-## Note Importante
-Le badge "Made with Emergent" est masqué via CSS mais reste présent dans le DOM (injecté par la plateforme). En déploiement sur serveur personnel, il ne sera pas présent.
-
-## Prochaines Actions
-1. Tester les exports PDF/Excel
-2. Intégrer un service d'email pour envoyer les codes
-3. Déployer en production
+## Credentials Test
+- **Admin**: `admin` / `admin`
+- **Code test**: Générer via Dashboard Admin → Codes d'accès
