@@ -4,13 +4,14 @@
 Développer l'application web Songon Extension (extension de onegreendev.com) intégrant un Masterplan dynamique basé sur un fichier KMZ pour la vente de terrains à Songon M'Braté, Côte d'Ivoire.
 
 ## Choix Utilisateur
-- Authentification: JWT simple (admin/admin)
+- Authentification: JWT simple (admin/admin via .env)
 - Thème: Mode "Nature" + **Thème Clair Prestigieux pour Masterplan**
 - Stockage: Fichier JSON local
 - Upload d'images: Oui
 - Multi-langue: Bilingue FR/EN
 - Sécurité documents: Codes d'accès + Watermarking + Journal
 - **Architecture: ONE-PAGE avec navigation fluide par ancres**
+- **Accès admin: CACHÉ (double-clic logo)**
 
 ## Architecture
 
@@ -20,68 +21,42 @@ Développer l'application web Songon Extension (extension de onegreendev.com) in
 - **Backend**: FastAPI (Python)
 - **Base de données**: Fichier JSON (parcelles.json)
 - **Auth**: JWT (PyJWT)
+- **Export**: jsPDF + jspdf-autotable + xlsx + file-saver
 
-### Structure One-Page (Mise à jour 03/02/2026)
+### Structure One-Page
 ```
 HomePage.js contient:
 ├── Section #accueil   → Hero + Stats Bar
 ├── Section Why Invest → Features (dark theme)
 ├── Section #masterplan → Filtres + Carte interactive (light theme)
-├── Section #contact   → Coordonnées uniquement (dark theme) [NETTOYÉ]
+├── Section #contact   → Coordonnées uniquement (dark theme)
 └── Footer             → Liens + Copyright
 ```
 
-### Navigation
-- Navbar fixe avec ancres internes
-- Scroll fluide (smooth scrolling)
-- Intersection Observer pour section active
-- Lazy loading de la carte (optimisation)
-
-## Exigences Principales
-
-### Architecture One-Page ✅
-- ✅ Toutes sections fusionnées sur une page
-- ✅ Navigation par ancres avec scroll fluide
-- ✅ Intersection Observer pour surlignage menu
-- ✅ Lazy loading du Masterplan (performance)
-- ✅ Redirections /masterplan → /#masterplan
-
-### Design ✅
-- ✅ Hero section avec fond image + overlay
-- ✅ Section Masterplan en thème clair prestigieux
-- ✅ CartoDB Light tiles pour carte élégante
-- ✅ Typographies: Playfair Display (titres), Montserrat (reste)
-- ✅ Badge "Made with Emergent" retiré du footer personnalisé
-
-### Nettoyage UI (03/02/2026) ✅
-- ✅ Section statistiques (4 cartes) supprimée du Masterplan
-- ✅ Formulaire de contact supprimé
-- ✅ Coordonnées conservées et centrées (Email, Téléphone, Adresse, Horaires)
-
-### Fonctionnalités ✅
-- ✅ Carte interactive avec parcelles colorées
-- ✅ Fiche détaillée en sidebar
-- ✅ Système codes d'accès documents
-- ✅ Dashboard admin complet
+### Accès Admin (Secret)
+- Double-clic sur le logo → Modal de connexion
+- Pas de lien visible dans la navigation
+- Identifiants stockés dans .env (ADMIN_USERNAME, ADMIN_PASSWORD)
 
 ## Ce qui a été implémenté
+
+### Version 1.4.0 - Dashboard Admin Modernisé + Export (03/02/2026)
+- **Accès admin caché**: Double-clic sur le logo ouvre un modal de connexion
+- **Dashboard modernisé**: Design glassmorphism avec cartes statistiques animées
+- **Export PDF**: Rapport professionnel avec en-tête Songon Extension
+- **Export Excel**: Fichier .xlsx avec toutes les données des parcelles
+- **Sidebar élégante**: Navigation admin avec animations
+- **Page login nettoyée**: Suppression des identifiants demo visibles
 
 ### Version 1.3.0 - Nettoyage UI (03/02/2026)
 - Suppression de la section Quick Stats (4 cartes) dans Masterplan
 - Suppression du formulaire de contact
 - Conservation des coordonnées uniquement (centrées et élégantes)
-- Nettoyage du code (imports inutilisés supprimés)
 
 ### Version 1.2.0 - Architecture One-Page
 - Transformation complète en Single Page Application
 - Navigation fluide avec ancres internes
 - Lazy loading de la carte (optimisation scroll)
-- Intersection Observer pour section active
-- Redirections des anciennes routes
-
-### Typographie
-- Playfair Display: Titres principaux uniquement
-- Montserrat: Tout le reste (labels, textes, boutons)
 
 ## Backlog Prioritaire
 
@@ -95,13 +70,13 @@ HomePage.js contient:
 
 ### P2 (Nice to have)
 - Mode offline avec Service Worker
-- Export PDF des fiches parcelles
+- Export PDF des fiches parcelles individuelles
 - Animations parallax avancées
 
 ## Note Importante
-Le badge "Made with Emergent" visible en bas à droite est injecté par la plateforme de déploiement Emergent et ne peut pas être supprimé via le code. Il ne sera pas présent lors du déploiement sur un serveur personnel.
+Le badge "Made with Emergent" est masqué via CSS mais reste présent dans le DOM (injecté par la plateforme). En déploiement sur serveur personnel, il ne sera pas présent.
 
 ## Prochaines Actions
-1. Intégrer un service d'email pour envoyer les codes
-2. Ajouter des photos réelles aux parcelles
+1. Tester les exports PDF/Excel
+2. Intégrer un service d'email pour envoyer les codes
 3. Déployer en production
