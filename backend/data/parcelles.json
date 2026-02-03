@@ -1079,6 +1079,18 @@
       "created_by": "admin",
       "active": true,
       "usage_count": 0
+    },
+    {
+      "id": "8335198a-8b80-4952-8a9b-f45a409f3fc1",
+      "code": "GX6R3HGX",
+      "client_name": "Jean Test",
+      "client_email": "jean@test.com",
+      "parcelle_ids": [],
+      "expires_at": "2026-02-06T15:37:14.693524+00:00",
+      "created_at": "2026-02-03T15:37:14.693556+00:00",
+      "created_by": "admin",
+      "active": true,
+      "usage_count": 0
     }
   ],
   "download_logs": [
