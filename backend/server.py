@@ -669,6 +669,119 @@ async def delete_image(
     
     raise HTTPException(status_code=404, detail="Parcelle non trouvée")
 
+@api_router.post("/admin/upload/document/{parcelle_id}")
+async def upload_official_document(
+    parcelle_id: str,
+    document_type: str = Form(...),  # acd, plan, extrait_cadastral, etc.
+    file: UploadFile = File(...),
+    username: str = Depends(verify_token)
+):
+    """Upload official document (ACD, plan cadastral, etc.) for a parcelle"""
+    allowed_types = ["acd", "plan", "extrait_cadastral", "titre_foncier", "autre"]
+    if document_type not in allowed_types:
+        raise HTTPException(status_code=400, detail=f"Type de document invalide. Types autorisés: {', '.join(allowed_types)}")
+    
+    if not file.filename.endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Seuls les fichiers PDF sont autorisés")
+    
+    # Create documents directory for parcelle
+    parcelle_docs_dir = DOCUMENTS_DIR / parcelle_id
+    parcelle_docs_dir.mkdir(exist_ok=True)
+    
+    # Save file
+    filename = f"{document_type}_{uuid.uuid4().hex[:8]}.pdf"
+    filepath = parcelle_docs_dir / filename
+    
+    with open(filepath, 'wb') as f:
+        content = await file.read()
+        f.write(content)
+    
+    # Update parcelle data
+    data = load_data()
+    parcelles = data.get("parcelles", [])
+    
+    document_info = {
+        "type": document_type,
+        "filename": filename,
+        "original_name": file.filename,
+        "path": str(filepath),
+        "uploaded_at": datetime.now(timezone.utc).isoformat(),
+        "uploaded_by": username
+    }
+    
+    for i, p in enumerate(parcelles):
+        if p["id"] == parcelle_id:
+            # Initialize official_documents if not exists
+            if "official_documents" not in parcelles[i]:
+                parcelles[i]["official_documents"] = {}
+            
+            # Store document info by type
+            parcelles[i]["official_documents"][document_type] = document_info
+            
+            data["parcelles"] = parcelles
+            save_data(data)
+            
+            logger.info(f"Official document uploaded: {document_type} for parcelle {parcelle_id}")
+            return {
+                "success": True,
+                "document_type": document_type,
+                "filename": filename,
+                "message": f"Document {document_type.upper()} uploadé avec succès"
+            }
+    
+    # Cleanup file if parcelle not found
+    if filepath.exists():
+        filepath.unlink()
+    raise HTTPException(status_code=404, detail="Parcelle non trouvée")
+
+@api_router.delete("/admin/document/{parcelle_id}/{document_type}")
+async def delete_official_document(
+    parcelle_id: str,
+    document_type: str,
+    username: str = Depends(verify_token)
+):
+    """Delete an official document from a parcelle"""
+    data = load_data()
+    parcelles = data.get("parcelles", [])
+    
+    for i, p in enumerate(parcelles):
+        if p["id"] == parcelle_id:
+            official_docs = p.get("official_documents", {})
+            if document_type in official_docs:
+                doc_info = official_docs[document_type]
+                
+                # Delete file
+                try:
+                    filepath = Path(doc_info.get("path", ""))
+                    if filepath.exists():
+                        filepath.unlink()
+                except Exception as e:
+                    logger.warning(f"Could not delete document file: {e}")
+                
+                # Remove from data
+                del parcelles[i]["official_documents"][document_type]
+                data["parcelles"] = parcelles
+                save_data(data)
+                
+                return {"success": True, "deleted": document_type}
+            else:
+                raise HTTPException(status_code=404, detail="Document non trouvé")
+    
+    raise HTTPException(status_code=404, detail="Parcelle non trouvée")
+
+@api_router.get("/admin/documents/{parcelle_id}")
+async def get_parcelle_documents(parcelle_id: str, username: str = Depends(verify_token)):
+    """Get all official documents for a parcelle"""
+    data = load_data()
+    for p in data.get("parcelles", []):
+        if p["id"] == parcelle_id:
+            return {
+                "parcelle_id": parcelle_id,
+                "parcelle_nom": p.get("nom", ""),
+                "official_documents": p.get("official_documents", {})
+            }
+    raise HTTPException(status_code=404, detail="Parcelle non trouvée")
+
 @api_router.post("/admin/upload/kmz")
 async def upload_kmz(file: UploadFile = File(...), username: str = Depends(verify_token)):
     """Upload and parse KMZ file"""
