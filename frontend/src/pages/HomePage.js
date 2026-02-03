@@ -579,65 +579,74 @@ export default function HomePage() {
       <section 
         id="masterplan" 
         className="py-20 lg:py-28"
-        style={{ background: 'linear-gradient(135deg, #faf9f6 0%, #f5f3ef 100%)' }}
+        style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)' }}
         data-testid="masterplan-section"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
           <motion.div 
-            className="text-center mb-12"
+            className="text-center mb-10"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <span className="font-montserrat text-green-700 text-sm font-semibold uppercase tracking-wider">
-              Master Plan
+            <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 font-montserrat text-sm font-semibold uppercase tracking-wider mb-4">
+              Master Plan Interactif
             </span>
-            <h2 className="font-playfair text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mt-2 mb-4">
+            <h2 className="font-playfair text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
               {t('masterplan_title')}
             </h2>
-            <p className="font-montserrat text-gray-600 max-w-2xl mx-auto">
+            <p className="font-montserrat text-gray-600 max-w-2xl mx-auto text-lg">
               {t('masterplan_subtitle')}
             </p>
           </motion.div>
 
-          {/* Stats Row */}
+          {/* Quick Stats Row */}
           <motion.div 
             className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            {[
-              { label: t('stats_disponible'), value: stats.disponible, color: 'green' },
-              { label: t('status_option'), value: stats.option, color: 'orange' },
-              { label: t('status_vendu'), value: stats.vendu, color: 'red' },
-              { label: t('stats_hectares'), value: `${Math.round(stats.total_superficie)}+`, color: 'blue' }
-            ].map((stat, i) => (
-              <div 
-                key={i}
-                className={`bg-white rounded-xl p-4 text-center shadow-sm border border-${stat.color}-100`}
-              >
-                <div className={`font-playfair text-2xl font-bold text-${stat.color}-600`}>{stat.value}</div>
-                <div className="font-montserrat text-gray-500 text-sm mt-1">{stat.label}</div>
-              </div>
-            ))}
+            <div className="bg-white rounded-xl p-5 text-center shadow-md border-l-4 border-emerald-500">
+              <div className="font-playfair text-3xl font-bold text-emerald-600">{stats.disponible}</div>
+              <div className="font-montserrat text-gray-600 text-sm mt-1">{t('stats_disponible')}</div>
+            </div>
+            <div className="bg-white rounded-xl p-5 text-center shadow-md border-l-4 border-amber-500">
+              <div className="font-playfair text-3xl font-bold text-amber-600">{stats.option}</div>
+              <div className="font-montserrat text-gray-600 text-sm mt-1">{t('status_option')}</div>
+            </div>
+            <div className="bg-white rounded-xl p-5 text-center shadow-md border-l-4 border-rose-500">
+              <div className="font-playfair text-3xl font-bold text-rose-600">{stats.vendu}</div>
+              <div className="font-montserrat text-gray-600 text-sm mt-1">{t('status_vendu')}</div>
+            </div>
+            <div className="bg-white rounded-xl p-5 text-center shadow-md border-l-4 border-blue-500">
+              <div className="font-playfair text-3xl font-bold text-blue-600">{Math.round(stats.total_superficie)}+</div>
+              <div className="font-montserrat text-gray-600 text-sm mt-1">{t('stats_hectares')}</div>
+            </div>
           </motion.div>
 
-          {/* Legend and Filter */}
-          <MapLegend t={t} filterStatus={filterStatus} setFilterStatus={setFilterStatus} />
+          {/* Enhanced Filter Controls */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <MapControls t={t} filterStatus={filterStatus} setFilterStatus={setFilterStatus} stats={stats} />
+          </motion.div>
 
           {/* Interactive Map */}
           <motion.div 
-            className="rounded-2xl overflow-hidden shadow-2xl border border-green-100"
+            className="rounded-2xl overflow-hidden shadow-2xl border-2 border-white"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
+            style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)' }}
           >
             <Suspense fallback={<MapLoadingPlaceholder />}>
               {mapLoaded && config && (
-                <div className="h-[500px] lg:h-[600px]">
+                <div className="h-[500px] lg:h-[650px]">
                   <MasterplanMap
                     parcelles={parcelles}
                     config={config}
@@ -652,7 +661,21 @@ export default function HomePage() {
           </motion.div>
 
           {/* Map Instructions */}
-          <p className="font-montserrat text-gray-500 text-sm text-center mt-4">
+          <motion.div 
+            className="mt-6 bg-white/80 backdrop-blur rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+              <MapPin className="w-4 h-4 text-emerald-600" />
+            </div>
+            <p className="font-montserrat text-gray-600 text-sm">
+              <span className="font-semibold text-gray-800">Astuce :</span> Cliquez sur une parcelle pour afficher sa fiche détaillée. Survolez pour voir le prix au m².
+            </p>
+          </motion.div>
+        </div>
+      </section>
             Cliquez sur une parcelle pour afficher sa fiche détaillée. Survolez pour voir le prix au m².
           </p>
         </div>
