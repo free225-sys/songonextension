@@ -438,10 +438,15 @@ async def get_document_with_watermark(
     
     # If just requesting info
     if action == "info":
+        # Check if real document exists
+        official_docs = parcelle.get("official_documents", {})
+        has_real_doc = document_type in official_docs
+        
         return {
             "document_type": document_type,
             "parcelle_id": parcelle_id,
             "parcelle_nom": parcelle.get("nom", ""),
+            "has_real_document": has_real_doc,
             "access_granted": True,
             "accessed_by": client_name,
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -449,26 +454,64 @@ async def get_document_with_watermark(
             "preview_url": f"/api/documents/{parcelle_id}/{document_type}?code={code}&action=preview"
         }
     
-    # Generate watermarked PDF
-    if document_type == "acd":
-        pdf_content = create_placeholder_acd_pdf(
-            parcelle_nom=parcelle.get("nom", "Parcelle"),
-            parcelle_ref=parcelle.get("reference_tf", "N/A"),
-            client_name=client_name,
-            access_code=code
-        )
-        filename = f"ACD_{parcelle.get('nom', parcelle_id).replace(' ', '_')}.pdf"
-    elif document_type == "plan":
-        pdf_content = create_placeholder_plan_pdf(
-            parcelle_nom=parcelle.get("nom", "Parcelle"),
-            parcelle_ref=parcelle.get("reference_tf", "N/A"),
-            superficie=parcelle.get("superficie", 0),
-            client_name=client_name,
-            access_code=code
-        )
-        filename = f"Plan_{parcelle.get('nom', parcelle_id).replace(' ', '_')}.pdf"
+    # Check if real document exists
+    official_docs = parcelle.get("official_documents", {})
+    
+    if document_type in official_docs:
+        # Use real uploaded document with watermark
+        doc_info = official_docs[document_type]
+        doc_path = Path(doc_info.get("path", ""))
+        
+        if doc_path.exists():
+            # Read original PDF and add watermark
+            with open(doc_path, 'rb') as f:
+                original_pdf = f.read()
+            
+            try:
+                pdf_content = add_watermark_to_pdf(original_pdf, client_name, code)
+                filename = f"{document_type.upper()}_{parcelle.get('nom', parcelle_id).replace(' ', '_')}_watermarked.pdf"
+            except Exception as e:
+                logger.error(f"Error adding watermark: {e}")
+                # Fallback to placeholder if watermark fails
+                if document_type == "acd":
+                    pdf_content = create_placeholder_acd_pdf(
+                        parcelle_nom=parcelle.get("nom", "Parcelle"),
+                        parcelle_ref=parcelle.get("reference_tf", "N/A"),
+                        client_name=client_name,
+                        access_code=code
+                    )
+                else:
+                    pdf_content = create_placeholder_plan_pdf(
+                        parcelle_nom=parcelle.get("nom", "Parcelle"),
+                        parcelle_ref=parcelle.get("reference_tf", "N/A"),
+                        superficie=parcelle.get("superficie", 0),
+                        client_name=client_name,
+                        access_code=code
+                    )
+                filename = f"{document_type.upper()}_{parcelle.get('nom', parcelle_id).replace(' ', '_')}.pdf"
+        else:
+            raise HTTPException(status_code=404, detail="Fichier document non trouvé")
     else:
-        raise HTTPException(status_code=400, detail="Type de document non supporté")
+        # Generate placeholder PDF with watermark
+        if document_type == "acd":
+            pdf_content = create_placeholder_acd_pdf(
+                parcelle_nom=parcelle.get("nom", "Parcelle"),
+                parcelle_ref=parcelle.get("reference_tf", "N/A"),
+                client_name=client_name,
+                access_code=code
+            )
+            filename = f"ACD_{parcelle.get('nom', parcelle_id).replace(' ', '_')}_SPECIMEN.pdf"
+        elif document_type == "plan":
+            pdf_content = create_placeholder_plan_pdf(
+                parcelle_nom=parcelle.get("nom", "Parcelle"),
+                parcelle_ref=parcelle.get("reference_tf", "N/A"),
+                superficie=parcelle.get("superficie", 0),
+                client_name=client_name,
+                access_code=code
+            )
+            filename = f"Plan_{parcelle.get('nom', parcelle_id).replace(' ', '_')}_SPECIMEN.pdf"
+        else:
+            raise HTTPException(status_code=400, detail="Type de document non supporté")
     
     # Return as streaming response
     if action == "download":
