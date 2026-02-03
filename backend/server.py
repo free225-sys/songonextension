@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Form, Response
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Form, Response, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse
@@ -20,6 +20,7 @@ import shutil
 import zipfile
 import xml.etree.ElementTree as ET
 from io import BytesIO
+from watermark import create_placeholder_acd_pdf, create_placeholder_plan_pdf, add_watermark_to_pdf
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
