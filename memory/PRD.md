@@ -5,101 +5,75 @@ Développer l'application web Songon Extension (extension de onegreendev.com) in
 
 ## Choix Utilisateur
 - Authentification: JWT simple (admin/songon2024)
-- Thème: Mode "Nature" (dark avec accents verts) + **Thème Clair Prestigieux pour le Masterplan**
+- Thème: Mode "Nature" + **Thème Clair Prestigieux pour Masterplan**
 - Stockage: Fichier JSON local
 - Upload d'images: Oui
 - Multi-langue: Bilingue FR/EN
-- **Sécurité documents: Codes d'accès + Watermarking + Journal des téléchargements**
+- Sécurité documents: Codes d'accès + Watermarking + Journal
+- **Architecture: ONE-PAGE avec navigation fluide par ancres**
 
 ## Architecture
 
 ### Stack Technique
 - **Frontend**: React.js + Tailwind CSS + Shadcn/UI + Framer Motion
-- **Mapping**: react-leaflet (Leaflet.js) + CartoDB Light tiles (thème clair)
+- **Mapping**: react-leaflet (Leaflet.js) + CartoDB Light tiles
 - **Backend**: FastAPI (Python)
 - **Base de données**: Fichier JSON (parcelles.json)
 - **Auth**: JWT (PyJWT)
 
-### Structure des Fichiers Clés
+### Structure One-Page
 ```
-/app/
-├── backend/
-│   ├── server.py           # API FastAPI v1.1.0
-│   ├── data/
-│   │   └── parcelles.json  # Données des parcelles + codes d'accès + logs
-│   └── uploads/            # Images uploadées
-├── frontend/src/
-│   ├── pages/
-│   │   ├── HomePage.js     # Page d'accueil (dark theme)
-│   │   ├── MasterplanPage.js # Carte interactive (LIGHT THEME)
-│   │   ├── ContactPage.js  # Formulaire de contact
-│   │   ├── LoginPage.js    # Connexion admin
-│   │   └── AdminPage.js    # Dashboard admin + gestion codes
-│   ├── components/
-│   │   ├── MasterplanMap.js # Carte Leaflet (light tiles)
-│   │   ├── ParcelleDetail.js # Fiche parcelle + sécurité docs
-│   │   ├── Navbar.js       # Navigation
-│   │   └── Footer.js       # Pied de page
-│   └── contexts/
-│       ├── LanguageContext.js # i18n FR/EN
-│       └── AuthContext.js     # Gestion auth
+HomePage.js contient:
+├── Section #accueil   → Hero + Stats
+├── Section Why Invest → Features (dark theme)
+├── Section #masterplan → Carte interactive (light theme)
+├── Section #contact   → Formulaire + Coordonnées (dark theme)
+└── Footer             → Liens + Copyright
 ```
 
-## User Personas
-1. **Investisseur immobilier** - Consulte le masterplan, demande accès documents
-2. **Administrateur OGD** - Gère les statuts, génère codes d'accès, consulte logs
-3. **Acheteur potentiel** - Recherche des terrains par type/statut
+### Navigation
+- Navbar fixe avec ancres internes
+- Scroll fluide (smooth scrolling)
+- Intersection Observer pour section active
+- Lazy loading de la carte (optimisation)
 
 ## Exigences Principales
 
-### Page Publique ✅
-- ✅ Page d'accueil avec hero section et statistiques
-- ✅ Masterplan interactif avec carte Leaflet
-- ✅ **Thème clair prestigieux** (CartoDB Light tiles, couleurs pastel)
-- ✅ 9 parcelles extraites du fichier KMZ
-- ✅ Couleurs par statut (vert=disponible, orange=option, rouge=vendu)
-- ✅ Tooltips au survol avec prix au m²
-- ✅ Fiche détaillée complète avec onglets
-- ✅ Filtre par statut
-- ✅ Switcher de langue FR/EN
-- ✅ Page de contact avec formulaire
+### Architecture One-Page ✅
+- ✅ Toutes sections fusionnées sur une page
+- ✅ Navigation par ancres avec scroll fluide
+- ✅ Intersection Observer pour surlignage menu
+- ✅ Lazy loading du Masterplan (performance)
+- ✅ Redirections /masterplan → /#masterplan
 
-### Sécurité Documents ✅ (NOUVEAU)
-- ✅ Section "Documents Sécurisés" avec cadenas
-- ✅ Champ de saisie code d'accès
-- ✅ Vérification API du code
-- ✅ Avertissement légal avant téléchargement
-- ✅ Watermarking numérique (nom client + code)
-- ✅ Journalisation des téléchargements
+### Design ✅
+- ✅ Hero section avec fond image + overlay
+- ✅ Section Masterplan en thème clair prestigieux
+- ✅ CartoDB Light tiles pour carte élégante
+- ✅ Typographies: Playfair Display (titres), Montserrat (reste)
+- ✅ Badge "Made with Emergent" retiré du footer personnalisé
 
-### Dashboard Admin ✅
-- ✅ Authentification JWT
-- ✅ Tableau de bord avec statistiques
-- ✅ Gestion des parcelles (CRUD)
-- ✅ Modification du statut en temps réel
-- ✅ Upload d'images
-- ✅ Import KMZ
-- ✅ **Gestion des codes d'accès** (génération, révocation)
-- ✅ **Journal des téléchargements** (traçabilité)
+### Fonctionnalités ✅
+- ✅ Carte interactive avec parcelles colorées
+- ✅ Fiche détaillée en sidebar
+- ✅ Formulaire de contact fonctionnel
+- ✅ Système codes d'accès documents
+- ✅ Dashboard admin complet
 
-## Ce qui a été implémenté (02/02/2026)
+## Ce qui a été implémenté (03/02/2026)
 
-### Version 1.1.0
-- Système complet de codes d'accès temporaires
-- Watermarking dynamique des documents
-- Journal des téléchargements avec statistiques
-- Thème clair prestigieux pour le Masterplan
-- CartoDB Light tiles pour carte élégante
-- Couleurs pastel pour les parcelles
+### Version 1.2.0 - Architecture One-Page
+- Transformation complète en Single Page Application
+- Navigation fluide avec ancres internes
+- Lazy loading de la carte (optimisation scroll)
+- Intersection Observer pour section active
+- Redirections des anciennes routes
 
-### API Endpoints Ajoutés
-- `POST /api/documents/verify-code` - Vérification code
-- `GET /api/documents/{parcelle_id}/{doc_type}?code=X` - Accès document + watermark
-- `POST /api/admin/access-codes` - Création code
-- `GET /api/admin/access-codes` - Liste des codes
-- `DELETE /api/admin/access-codes/{id}` - Révocation
-- `GET /api/admin/download-logs` - Journal
-- `GET /api/admin/download-logs/stats` - Statistiques
+### Typographie
+- Playfair Display: Titres principaux uniquement
+- Montserrat: Tout le reste (labels, textes, boutons)
+
+### Tests: 95-100% réussite
 
 ## Backlog Prioritaire
 
@@ -107,17 +81,16 @@ Développer l'application web Songon Extension (extension de onegreendev.com) in
 - (Aucun - toutes les fonctionnalités critiques sont implémentées)
 
 ### P1 (Important)
-- Envoi d'emails avec le code d'accès généré
-- Génération réelle de PDF avec watermark intégré
-- Notifications en temps réel (WebSocket)
+- Envoi d'emails avec codes d'accès
+- PDF watermarkés côté serveur
+- Notifications en temps réel
 
 ### P2 (Nice to have)
+- Mode offline avec Service Worker
 - Export PDF des fiches parcelles
-- Recherche avancée avec filtres multiples
-- Comparateur de parcelles
-- Historique des modifications (audit log)
+- Animations de transition entre sections
 
 ## Prochaines Actions
-1. Intégrer un service d'email pour envoyer les codes aux clients
-2. Générer des PDF watermarkés côté serveur (ReportLab/WeasyPrint)
-3. Déployer l'application en production
+1. Intégrer un service d'email pour envoyer les codes
+2. Ajouter des photos réelles aux parcelles
+3. Déployer en production
