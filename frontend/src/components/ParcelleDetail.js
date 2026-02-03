@@ -302,25 +302,41 @@ const DocumentAccessSection = ({ parcelle, t }) => {
               </p>
             </div>
 
-            {/* Document List */}
+            {/* Document List - Dynamic based on uploaded documents */}
             <div className="space-y-2">
-              {documentTypes.map((doc) => (
-                <button
-                  key={doc.key}
-                  onClick={() => handleDocumentAccess(doc.key, doc.label)}
-                  className="w-full flex items-center gap-3 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group border border-white/5 hover:border-green-500/30"
-                  data-testid={`doc-${doc.key}`}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                    <doc.icon className="w-5 h-5 text-green-400" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <span className="text-white text-sm font-medium block">{doc.label}</span>
-                    <span className="text-gray-500 text-xs">Cliquer pour accéder</span>
-                  </div>
-                  <ExternalLink className="w-4 h-4 text-gray-500 group-hover:text-green-400 transition-colors" />
-                </button>
-              ))}
+              {loadingDocs ? (
+                <div className="text-center py-4">
+                  <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                  <p className="text-gray-500 text-xs mt-2">Chargement des documents...</p>
+                </div>
+              ) : availableDocuments.length === 0 ? (
+                <div className="text-center py-6 bg-white/5 rounded-lg">
+                  <FileText className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                  <p className="text-gray-400 text-sm">Aucun document officiel disponible</p>
+                  <p className="text-gray-500 text-xs mt-1">Les documents seront ajoutés prochainement</p>
+                </div>
+              ) : (
+                availableDocuments.map((doc) => {
+                  const DocIcon = getDocumentIcon(doc.type);
+                  return (
+                    <button
+                      key={doc.type}
+                      onClick={() => handleDocumentAccess(doc.type, doc.label)}
+                      className="w-full flex items-center gap-3 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group border border-white/5 hover:border-green-500/30"
+                      data-testid={`doc-${doc.type}`}
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                        <DocIcon className="w-5 h-5 text-green-400" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <span className="text-white text-sm font-medium block">{doc.label}</span>
+                        <span className="text-gray-500 text-xs">Cliquer pour accéder</span>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-gray-500 group-hover:text-green-400 transition-colors" />
+                    </button>
+                  );
+                })
+              )}
             </div>
 
             {/* Re-lock option */}
