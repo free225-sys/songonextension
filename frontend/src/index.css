@@ -47,6 +47,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 80px; /* Account for fixed navbar */
 }
 
 body {
@@ -461,4 +462,73 @@ code {
   opacity: 0.03;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* ==================== ONE-PAGE SPECIFIC STYLES ==================== */
+
+/* Section anchor offset for fixed header */
+section[id] {
+  scroll-margin-top: 80px;
+}
+
+/* Smooth transitions for sections */
+section {
+  position: relative;
+}
+
+/* Font classes for easy application */
+.font-playfair {
+  font-family: 'Playfair Display', serif !important;
+}
+
+.font-montserrat {
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+/* Map container optimization - lazy loading */
+.map-container {
+  will-change: auto;
+  contain: layout style;
+}
+
+/* Reduce map repaints during scroll */
+.leaflet-container {
+  will-change: auto;
+}
+
+/* Optimized animations */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  
+  .animate-fade-in,
+  .animate-slide-in {
+    animation: none;
+  }
+}
+
+/* Stats cards in light section */
+.stats-light .stat-card {
+  background: white;
+  border: 1px solid rgba(34, 139, 34, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Select dropdown styling */
+select.font-montserrat {
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Responsive map height */
+@media (max-width: 768px) {
+  .map-container {
+    height: 400px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .map-container {
+    height: 600px !important;
+  }
 }
