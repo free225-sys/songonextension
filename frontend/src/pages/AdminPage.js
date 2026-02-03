@@ -594,6 +594,8 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
   const [formData, setFormData] = useState(parcelle);
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [officialDocs, setOfficialDocs] = useState(parcelle.official_documents || {});
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -656,6 +658,78 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
     setUploadingImage(false);
   };
 
+  // Handle official document upload
+  const handleDocumentUpload = async (e, docType) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (!file.name.endsWith('.pdf')) {
+      toast.error('Seuls les fichiers PDF sont autorisés');
+      return;
+    }
+
+    const formDataUpload = new FormData();
+    formDataUpload.append('file', file);
+    formDataUpload.append('document_type', docType);
+
+    setUploadingDoc(true);
+    try {
+      const response = await axios.post(
+        `${API}/admin/upload/document/${parcelle.id}`,
+        formDataUpload,
+        { 
+          headers: { 
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      
+      // Update local state
+      setOfficialDocs(prev => ({
+        ...prev,
+        [docType]: {
+          type: docType,
+          filename: response.data.filename,
+          original_name: file.name,
+          uploaded_at: new Date().toISOString()
+        }
+      }));
+      
+      toast.success(response.data.message);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erreur lors de l\'upload');
+    }
+    setUploadingDoc(false);
+  };
+
+  // Handle document deletion
+  const handleDeleteDocument = async (docType) => {
+    try {
+      await axios.delete(
+        `${API}/admin/document/${parcelle.id}/${docType}`,
+        { headers: getAuthHeaders() }
+      );
+      
+      setOfficialDocs(prev => {
+        const updated = { ...prev };
+        delete updated[docType];
+        return updated;
+      });
+      
+      toast.success('Document supprimé');
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
+  };
+
+  const documentTypes = [
+    { key: 'acd', label: 'Arrêté de Concession Définitive (ACD)', icon: FileText },
+    { key: 'plan', label: 'Plan cadastral / Bornage', icon: Map },
+    { key: 'extrait_cadastral', label: 'Extrait cadastral', icon: FileText },
+    { key: 'titre_foncier', label: 'Titre foncier', icon: FileText },
+  ];
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="bg-[#0d1410] border-white/10 max-w-2xl max-h-[90vh] overflow-hidden">
@@ -665,10 +739,11 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
         
         <ScrollArea className="max-h-[60vh] pr-4">
           <Tabs defaultValue="info" className="w-full">
-            <TabsList className="w-full bg-white/5 p-1 rounded-xl grid grid-cols-3">
-              <TabsTrigger value="info" className="rounded-lg">Informations</TabsTrigger>
-              <TabsTrigger value="prix" className="rounded-lg">Prix</TabsTrigger>
-              <TabsTrigger value="images" className="rounded-lg">Images</TabsTrigger>
+            <TabsList className="w-full bg-white/5 p-1 rounded-xl grid grid-cols-4">
+              <TabsTrigger value="info" className="rounded-lg text-xs">Infos</TabsTrigger>
+              <TabsTrigger value="prix" className="rounded-lg text-xs">Prix</TabsTrigger>
+              <TabsTrigger value="images" className="rounded-lg text-xs">Images</TabsTrigger>
+              <TabsTrigger value="documents" className="rounded-lg text-xs">Documents</TabsTrigger>
             </TabsList>
 
             <TabsContent value="info" className="mt-4 space-y-4">
