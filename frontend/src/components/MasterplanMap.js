@@ -12,22 +12,28 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-// Light theme colors - pastel/soft tones for prestigious look
-const STATUS_COLORS_LIGHT = {
+// Enhanced color palette with better contrast
+const STATUS_COLORS = {
   disponible: {
-    fill: 'rgba(34, 139, 34, 0.25)',
-    stroke: '#228b22',
-    strokeHover: '#166616',
+    fill: 'rgba(16, 185, 129, 0.35)',
+    fillHover: 'rgba(16, 185, 129, 0.55)',
+    stroke: '#059669',
+    strokeHover: '#047857',
+    label: { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200' }
   },
   option: {
-    fill: 'rgba(210, 105, 30, 0.25)',
-    stroke: '#d2691e',
-    strokeHover: '#a0522d',
+    fill: 'rgba(245, 158, 11, 0.35)',
+    fillHover: 'rgba(245, 158, 11, 0.55)',
+    stroke: '#d97706',
+    strokeHover: '#b45309',
+    label: { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200' }
   },
   vendu: {
-    fill: 'rgba(178, 34, 34, 0.25)',
-    stroke: '#b22222',
-    strokeHover: '#8b0000',
+    fill: 'rgba(244, 63, 94, 0.35)',
+    fillHover: 'rgba(244, 63, 94, 0.55)',
+    stroke: '#e11d48',
+    strokeHover: '#be123c',
+    label: { bg: 'bg-rose-100', text: 'text-rose-700', border: 'border-rose-200' }
   },
 };
 
@@ -45,7 +51,7 @@ const MapController = ({ center, zoom }) => {
 
 const ParcellePolygon = ({ parcelle, onClick, isSelected }) => {
   const { t } = useLanguage();
-  const colors = STATUS_COLORS_LIGHT[parcelle.statut] || STATUS_COLORS_LIGHT.disponible;
+  const colors = STATUS_COLORS[parcelle.statut] || STATUS_COLORS.disponible;
   
   // Convert [lng, lat] to [lat, lng] for Leaflet
   const positions = useMemo(() => {
@@ -66,44 +72,79 @@ const ParcellePolygon = ({ parcelle, onClick, isSelected }) => {
     <Polygon
       positions={positions}
       pathOptions={{
-        fillColor: colors.fill,
-        fillOpacity: isSelected ? 0.5 : 0.35,
+        fillColor: isSelected ? colors.fillHover : colors.fill,
+        fillOpacity: isSelected ? 0.7 : 0.5,
         color: isSelected ? colors.strokeHover : colors.stroke,
-        weight: isSelected ? 3 : 2,
+        weight: isSelected ? 4 : 2.5,
         opacity: 1,
       }}
       eventHandlers={{
         click: () => onClick(parcelle),
         mouseover: (e) => {
           e.target.setStyle({
-            fillOpacity: 0.5,
-            weight: 3,
+            fillColor: colors.fillHover,
+            fillOpacity: 0.65,
+            weight: 3.5,
             color: colors.strokeHover,
           });
         },
         mouseout: (e) => {
           if (!isSelected) {
             e.target.setStyle({
-              fillOpacity: 0.35,
-              weight: 2,
+              fillColor: colors.fill,
+              fillOpacity: 0.5,
+              weight: 2.5,
               color: colors.stroke,
             });
           }
         },
       }}
     >
-      <Tooltip sticky className="leaflet-tooltip-light">
-        <div className="bg-white text-gray-800 p-3 rounded-lg min-w-[220px] shadow-lg border border-gray-100">
-          <div className="font-semibold text-green-700 text-base mb-1">{parcelle.nom}</div>
-          <div className="text-xs text-gray-500 mb-2">{parcelle.type_projet} • {parcelle.superficie} {parcelle.unite_superficie}</div>
-          <div className="flex justify-between items-center">
-            <span className="font-bold text-gray-900">{formatPrice(parcelle.prix_m2)} FCFA/m²</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-              parcelle.statut === 'disponible' ? 'bg-green-100 text-green-700' :
-              parcelle.statut === 'option' ? 'bg-orange-100 text-orange-700' :
-              'bg-red-100 text-red-700'
-            }`}>
-              {statusLabels[parcelle.statut]}
+      <Tooltip sticky className="custom-tooltip">
+        <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden min-w-[260px]">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-4 py-3">
+            <div className="font-playfair text-white font-semibold text-base">{parcelle.nom}</div>
+            <div className="font-montserrat text-gray-300 text-xs mt-0.5">{parcelle.type_projet}</div>
+          </div>
+          
+          {/* Content */}
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <span className="font-montserrat text-gray-500 text-xs block">Prix au m²</span>
+                <span className="font-playfair text-xl font-bold text-gray-900">
+                  {formatPrice(parcelle.prix_m2)} <span className="text-sm text-gray-500">FCFA</span>
+                </span>
+              </div>
+              <span className={`
+                px-3 py-1.5 rounded-full text-xs font-bold font-montserrat
+                ${colors.label.bg} ${colors.label.text} ${colors.label.border} border
+              `}>
+                {statusLabels[parcelle.statut]}
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+              <div>
+                <span className="font-montserrat text-gray-500 text-xs block">Superficie</span>
+                <span className="font-montserrat text-gray-800 font-semibold text-sm">
+                  {parcelle.superficie} {parcelle.unite_superficie}
+                </span>
+              </div>
+              <div>
+                <span className="font-montserrat text-gray-500 text-xs block">Configuration</span>
+                <span className="font-montserrat text-gray-800 font-semibold text-sm">
+                  {parcelle.configuration}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Footer */}
+          <div className="bg-gray-50 px-4 py-2 border-t border-gray-100">
+            <span className="font-montserrat text-emerald-600 text-xs font-medium">
+              Cliquez pour voir les détails →
             </span>
           </div>
         </div>
@@ -127,11 +168,11 @@ export const MasterplanMap = ({
   const center = config?.map_center || [-4.287, 5.345];
   const zoom = config?.map_zoom || 15;
 
-  // Light/minimalist tile layer options
+  // Light/minimalist tile layer
   const tileLayerUrl = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
   
   return (
-    <div className="map-container relative rounded-2xl overflow-hidden shadow-xl border border-green-100" data-testid="masterplan-map">
+    <div className="map-container relative h-full w-full" data-testid="masterplan-map">
       <MapContainer
         center={[center[1], center[0]]}
         zoom={zoom}
