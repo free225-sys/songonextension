@@ -7,7 +7,6 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
 import { ScrollArea } from '../components/ui/scroll-area';
-import { Separator } from '../components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -26,28 +25,63 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
   MapPin, LayoutDashboard, Map, Upload, LogOut,
-  Search, Edit2, Trash2, Save, X, Image, FileUp, Plus,
-  AlertCircle, CheckCircle, Key, FileText, Clock,
-  Copy, Shield, Download, Users, Eye, EyeOff
+  Search, Edit2, Trash2, Save, X, Plus, Home,
+  Key, FileText, Clock, Copy, Download, Users, 
+  Eye, EyeOff, FileSpreadsheet, File, TrendingUp,
+  CheckCircle, AlertCircle, Calendar, DollarSign,
+  ArrowUpRight, ArrowDownRight, MoreHorizontal
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-// Admin Sidebar
+// Modern Stat Card Component
+const ModernStatCard = ({ icon: Icon, label, value, trend, trendValue, color, delay = 0 }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4, delay }}
+    className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 p-6 group hover:border-green-500/30 transition-all duration-300"
+  >
+    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-500/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
+    
+    <div className="relative z-10">
+      <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center mb-4`}>
+        <Icon className="w-6 h-6 text-white" />
+      </div>
+      
+      <p className="font-montserrat text-gray-400 text-sm mb-1">{label}</p>
+      <p className="font-playfair text-3xl font-bold text-white">{value}</p>
+      
+      {trend && (
+        <div className={`flex items-center gap-1 mt-2 ${trend === 'up' ? 'text-green-400' : 'text-red-400'}`}>
+          {trend === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+          <span className="text-sm font-medium">{trendValue}</span>
+        </div>
+      )}
+    </div>
+  </motion.div>
+);
+
+// Admin Sidebar - Modern Design
 const AdminSidebar = ({ activeTab, setActiveTab }) => {
   const { t } = useLanguage();
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState(false);
 
   const navItems = [
-    { id: 'dashboard', icon: LayoutDashboard, label: t('admin_dashboard') },
-    { id: 'parcelles', icon: Map, label: t('admin_parcelles') },
+    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { id: 'parcelles', icon: Map, label: 'Parcelles' },
     { id: 'access', icon: Key, label: 'Codes d\'accès' },
     { id: 'logs', icon: FileText, label: 'Journal' },
-    { id: 'kmz', icon: Upload, label: t('admin_kmz') },
+    { id: 'kmz', icon: Upload, label: 'Import KMZ' },
   ];
 
   const handleLogout = () => {
@@ -56,111 +90,196 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
   };
 
   return (
-    <div className="admin-sidebar flex flex-col">
-      <div className="p-6 border-b border-white/10">
-        <Link to="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+    <motion.div 
+      initial={{ x: -100, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      className={`bg-gradient-to-b from-[#0a0f0c] to-[#050807] border-r border-white/5 flex flex-col transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}
+    >
+      {/* Header */}
+      <div className="p-4 border-b border-white/5">
+        <Link to="/" className="flex items-center gap-3 group">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg shadow-green-500/20">
             <MapPin className="w-5 h-5 text-black" strokeWidth={2.5} />
           </div>
-          <div>
-            <span className="font-playfair text-lg font-semibold text-white">Songon</span>
-            <span className="text-green-400 text-xs block">Admin</span>
-          </div>
+          {!collapsed && (
+            <div>
+              <span className="font-playfair text-lg font-bold text-white">Songon</span>
+              <span className="text-green-400 text-xs font-montserrat block">Admin Panel</span>
+            </div>
+          )}
         </Link>
       </div>
 
-      <nav className="flex-1 py-4">
-        {navItems.map((item) => (
-          <button
+      {/* Navigation */}
+      <nav className="flex-1 py-4 px-3 space-y-1">
+        {navItems.map((item, index) => (
+          <motion.button
             key={item.id}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05 }}
             onClick={() => setActiveTab(item.id)}
             data-testid={`nav-${item.id}`}
-            className={`admin-nav-item w-full ${activeTab === item.id ? 'active' : ''}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-montserrat text-sm font-medium transition-all duration-200 ${
+              activeTab === item.id
+                ? 'bg-gradient-to-r from-green-500/20 to-green-500/5 text-green-400 border border-green-500/20'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
           >
             <item.icon className="w-5 h-5" />
-            <span>{item.label}</span>
-          </button>
+            {!collapsed && <span>{item.label}</span>}
+          </motion.button>
         ))}
       </nav>
 
-      <div className="p-4 border-t border-white/10">
+      {/* Bottom Actions */}
+      <div className="p-3 border-t border-white/5 space-y-2">
+        <Link
+          to="/"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all font-montserrat text-sm"
+        >
+          <Home className="w-5 h-5" />
+          {!collapsed && <span>Retour au site</span>}
+        </Link>
         <button
           onClick={handleLogout}
           data-testid="admin-logout"
-          className="admin-nav-item w-full text-red-400 hover:text-red-300 hover:bg-red-500/10"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all font-montserrat text-sm"
         >
           <LogOut className="w-5 h-5" />
-          <span>{t('nav_logout')}</span>
+          {!collapsed && <span>Déconnexion</span>}
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
-// Dashboard Tab
+// Dashboard Tab - Modern Design
 const DashboardTab = ({ stats, parcelles }) => {
   const { t } = useLanguage();
-
-  const statCards = [
-    { label: 'Total Parcelles', value: stats.total, color: 'text-white' },
-    { label: t('status_disponible'), value: stats.disponible, color: 'text-green-400' },
-    { label: t('status_option'), value: stats.option, color: 'text-orange-400' },
-    { label: t('status_vendu'), value: stats.vendu, color: 'text-red-400' },
-  ];
-
   const formatPrice = (price) => new Intl.NumberFormat('fr-FR').format(price);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="font-playfair text-2xl font-bold text-white mb-2">{t('admin_dashboard')}</h2>
-        <p className="text-gray-400">Vue d'ensemble de vos parcelles</p>
-      </div>
+    <div className="space-y-8">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <h1 className="font-playfair text-3xl font-bold text-white mb-2">Dashboard</h1>
+        <p className="font-montserrat text-gray-400">Vue d'ensemble de votre portefeuille foncier</p>
+      </motion.div>
 
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat, index) => (
-          <div key={index} className="stat-card">
-            <div className={`stat-value ${stat.color}`}>{stat.value}</div>
-            <div className="stat-label">{stat.label}</div>
+        <ModernStatCard
+          icon={Map}
+          label="Total Parcelles"
+          value={stats.total}
+          color="bg-gradient-to-br from-blue-500 to-blue-600"
+          delay={0}
+        />
+        <ModernStatCard
+          icon={CheckCircle}
+          label="Disponibles"
+          value={stats.disponible}
+          trend="up"
+          trendValue={`${Math.round((stats.disponible / stats.total) * 100)}%`}
+          color="bg-gradient-to-br from-green-500 to-green-600"
+          delay={0.1}
+        />
+        <ModernStatCard
+          icon={Clock}
+          label="Sous option"
+          value={stats.option}
+          color="bg-gradient-to-br from-orange-500 to-orange-600"
+          delay={0.2}
+        />
+        <ModernStatCard
+          icon={DollarSign}
+          label="Vendues"
+          value={stats.vendu}
+          color="bg-gradient-to-br from-rose-500 to-rose-600"
+          delay={0.3}
+        />
+      </div>
+
+      {/* Value Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500/20 via-green-500/10 to-transparent border border-green-500/20 p-8"
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-green-500/20 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="font-montserrat text-green-400/80 text-sm">Valeur totale du portefeuille</p>
+              <p className="font-playfair text-4xl font-bold text-white">
+                {formatPrice(stats.valeur_totale || 0)} <span className="text-lg text-gray-400">FCFA</span>
+              </p>
+            </div>
           </div>
-        ))}
-      </div>
-
-      <div className="card-glass p-6">
-        <h3 className="font-playfair text-lg font-semibold text-white mb-4">Valeur totale du portefeuille</h3>
-        <div className="text-3xl font-bold text-green-400">
-          {formatPrice(stats.valeur_totale || 0)} <span className="text-lg text-gray-400">FCFA</span>
+          <p className="font-montserrat text-gray-400 text-sm">
+            Surface totale: <span className="text-white font-medium">{stats.total_superficie || 0} hectares</span>
+          </p>
         </div>
-        <p className="text-gray-500 text-sm mt-2">
-          Surface totale: {stats.total_superficie || 0} ha
-        </p>
-      </div>
+      </motion.div>
 
-      <div className="card-glass p-6">
-        <h3 className="font-playfair text-lg font-semibold text-white mb-4">Parcelles récentes</h3>
-        <div className="space-y-3">
-          {parcelles.slice(0, 5).map((p) => (
-            <div key={p.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-              <div>
-                <span className="text-white font-medium">{p.nom}</span>
-                <span className="text-gray-500 text-sm ml-2">{p.type_projet}</span>
+      {/* Recent Parcelles */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 overflow-hidden"
+      >
+        <div className="p-6 border-b border-white/10">
+          <h3 className="font-playfair text-xl font-bold text-white">Parcelles récentes</h3>
+        </div>
+        <div className="divide-y divide-white/5">
+          {parcelles.slice(0, 5).map((p, index) => (
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 + index * 0.05 }}
+              className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
+            >
+              <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  p.statut === 'disponible' ? 'bg-green-500/20' :
+                  p.statut === 'option' ? 'bg-orange-500/20' : 'bg-red-500/20'
+                }`}>
+                  <Map className={`w-5 h-5 ${
+                    p.statut === 'disponible' ? 'text-green-400' :
+                    p.statut === 'option' ? 'text-orange-400' : 'text-red-400'
+                  }`} />
+                </div>
+                <div>
+                  <p className="font-montserrat text-white font-medium">{p.nom}</p>
+                  <p className="font-montserrat text-gray-500 text-sm">{p.type_projet} • {p.superficie} {p.unite_superficie}</p>
+                </div>
               </div>
-              <Badge className={`
-                ${p.statut === 'disponible' ? 'bg-green-500/20 text-green-400' : ''}
-                ${p.statut === 'option' ? 'bg-orange-500/20 text-orange-400' : ''}
-                ${p.statut === 'vendu' ? 'bg-red-500/20 text-red-400' : ''}
-              `}>
+              <Badge className={`font-montserrat ${
+                p.statut === 'disponible' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                p.statut === 'option' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' :
+                'bg-red-500/20 text-red-400 border-red-500/30'
+              } border`}>
                 {p.statut}
               </Badge>
-            </div>
+            </motion.div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
 
-// Parcelles Tab
+// Parcelles Tab with Export functionality
 const ParcellesTab = ({ parcelles, onUpdate, onDelete, getAuthHeaders }) => {
   const { t } = useLanguage();
   const [search, setSearch] = useState('');
@@ -169,7 +288,7 @@ const ParcellesTab = ({ parcelles, onUpdate, onDelete, getAuthHeaders }) => {
 
   const filteredParcelles = parcelles.filter(p =>
     p.nom.toLowerCase().includes(search.toLowerCase()) ||
-    p.reference_tf.includes(search)
+    p.reference_tf?.includes(search)
   );
 
   const handleStatusChange = async (parcelle, newStatus) => {
@@ -203,78 +322,216 @@ const ParcellesTab = ({ parcelles, onUpdate, onDelete, getAuthHeaders }) => {
 
   const formatPrice = (price) => new Intl.NumberFormat('fr-FR').format(price);
 
+  // Export to PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFillColor(16, 185, 129);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Songon Extension', 14, 25);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Rapport des Parcelles', 14, 33);
+    
+    // Date
+    doc.setTextColor(200, 200, 200);
+    doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, 140, 25);
+    
+    // Table
+    doc.autoTable({
+      startY: 50,
+      head: [['Nom', 'Type', 'Superficie', 'Prix/m²', 'Valeur', 'Statut']],
+      body: filteredParcelles.map(p => [
+        p.nom,
+        p.type_projet,
+        `${p.superficie} ${p.unite_superficie}`,
+        `${formatPrice(p.prix_m2)} FCFA`,
+        `${formatPrice(p.valeur_globale)} FCFA`,
+        p.statut.toUpperCase()
+      ]),
+      theme: 'striped',
+      headStyles: { 
+        fillColor: [16, 185, 129],
+        fontSize: 10,
+        fontStyle: 'bold'
+      },
+      bodyStyles: {
+        fontSize: 9
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      columnStyles: {
+        5: {
+          cellWidth: 25,
+          halign: 'center'
+        }
+      }
+    });
+    
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text(
+        `Page ${i} sur ${pageCount} | Songon Extension - onegreendev.com`,
+        doc.internal.pageSize.width / 2,
+        doc.internal.pageSize.height - 10,
+        { align: 'center' }
+      );
+    }
+    
+    doc.save('songon-parcelles-rapport.pdf');
+    toast.success('Rapport PDF exporté');
+  };
+
+  // Export to Excel
+  const exportToExcel = () => {
+    const data = filteredParcelles.map(p => ({
+      'Nom': p.nom,
+      'Référence TF': p.reference_tf,
+      'Type de projet': p.type_projet,
+      'Superficie': p.superficie,
+      'Unité': p.unite_superficie,
+      'Prix/m² (FCFA)': p.prix_m2,
+      'Valeur globale (FCFA)': p.valeur_globale,
+      'Configuration': p.configuration,
+      'Statut': p.statut,
+      'Atouts': p.atouts
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Parcelles');
+    
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 12 },
+      { wch: 8 }, { wch: 15 }, { wch: 18 }, { wch: 12 },
+      { wch: 12 }, { wch: 40 }
+    ];
+    
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, 'songon-parcelles-export.xlsx');
+    toast.success('Export Excel généré');
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div>
-          <h2 className="font-playfair text-2xl font-bold text-white mb-2">{t('admin_parcelles')}</h2>
-          <p className="text-gray-400">{parcelles.length} parcelles au total</p>
-        </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher..."
-            className="input-dark pl-10 w-full sm:w-64"
-            data-testid="search-parcelles"
-          />
-        </div>
+      {/* Header with Export buttons */}
+      <div className="flex flex-col lg:flex-row justify-between gap-4">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <h1 className="font-playfair text-3xl font-bold text-white mb-2">Gestion des Parcelles</h1>
+          <p className="font-montserrat text-gray-400">{parcelles.length} parcelles au total</p>
+        </motion.div>
+        
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }} 
+          animate={{ opacity: 1, x: 0 }}
+          className="flex flex-wrap items-center gap-3"
+        >
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher..."
+              className="pl-10 w-64 bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+              data-testid="search-parcelles"
+            />
+          </div>
+          
+          <Button
+            onClick={exportToPDF}
+            variant="outline"
+            className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+            data-testid="export-pdf-btn"
+          >
+            <File className="w-4 h-4 mr-2" />
+            PDF
+          </Button>
+          
+          <Button
+            onClick={exportToExcel}
+            variant="outline"
+            className="border-green-500/30 text-green-400 hover:bg-green-500/10"
+            data-testid="export-excel-btn"
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Excel
+          </Button>
+        </motion.div>
       </div>
 
-      <div className="card-glass overflow-hidden">
+      {/* Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 overflow-hidden"
+      >
         <div className="overflow-x-auto">
-          <table className="data-table">
+          <table className="w-full">
             <thead>
-              <tr>
-                <th>Nom</th>
-                <th>Type</th>
-                <th>Superficie</th>
-                <th>Prix/m²</th>
-                <th>Statut</th>
-                <th>Actions</th>
+              <tr className="border-b border-white/10">
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Nom</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Type</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Superficie</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Prix/m²</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Statut</th>
+                <th className="text-right p-4 font-montserrat text-gray-400 text-sm font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {filteredParcelles.map((parcelle) => (
-                <tr key={parcelle.id}>
-                  <td>
+            <tbody className="divide-y divide-white/5">
+              {filteredParcelles.map((parcelle, index) => (
+                <motion.tr
+                  key={parcelle.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.03 }}
+                  className="hover:bg-white/5 transition-colors"
+                >
+                  <td className="p-4">
                     <div>
-                      <span className="font-medium text-white">{parcelle.nom}</span>
-                      <span className="text-gray-500 text-xs block">Ref: {parcelle.reference_tf}</span>
+                      <p className="font-montserrat text-white font-medium">{parcelle.nom}</p>
+                      <p className="font-montserrat text-gray-500 text-xs">Ref: {parcelle.reference_tf}</p>
                     </div>
                   </td>
-                  <td>{parcelle.type_projet}</td>
-                  <td>{parcelle.superficie} {parcelle.unite_superficie}</td>
-                  <td>{formatPrice(parcelle.prix_m2)} FCFA</td>
-                  <td>
+                  <td className="p-4 font-montserrat text-gray-300">{parcelle.type_projet}</td>
+                  <td className="p-4 font-montserrat text-gray-300">{parcelle.superficie} {parcelle.unite_superficie}</td>
+                  <td className="p-4 font-montserrat text-gray-300">{formatPrice(parcelle.prix_m2)} FCFA</td>
+                  <td className="p-4">
                     <Select
                       value={parcelle.statut}
                       onValueChange={(value) => handleStatusChange(parcelle, value)}
                     >
-                      <SelectTrigger className="w-32 bg-white/5 border-white/10">
+                      <SelectTrigger className={`w-32 border-0 ${
+                        parcelle.statut === 'disponible' ? 'bg-green-500/20 text-green-400' :
+                        parcelle.statut === 'option' ? 'bg-orange-500/20 text-orange-400' :
+                        'bg-red-500/20 text-red-400'
+                      }`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-[#0d1410] border-white/10">
-                        <SelectItem value="disponible" className="text-green-400">
-                          {t('status_disponible')}
-                        </SelectItem>
-                        <SelectItem value="option" className="text-orange-400">
-                          {t('status_option')}
-                        </SelectItem>
-                        <SelectItem value="vendu" className="text-red-400">
-                          {t('status_vendu')}
-                        </SelectItem>
+                        <SelectItem value="disponible" className="text-green-400">Disponible</SelectItem>
+                        <SelectItem value="option" className="text-orange-400">Sous option</SelectItem>
+                        <SelectItem value="vendu" className="text-red-400">Vendu</SelectItem>
                       </SelectContent>
                     </Select>
                   </td>
-                  <td>
-                    <div className="flex items-center gap-2">
+                  <td className="p-4">
+                    <div className="flex items-center justify-end gap-2">
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => setEditingParcelle(parcelle)}
-                        className="text-gray-400 hover:text-white"
+                        className="text-gray-400 hover:text-white hover:bg-white/10"
                         data-testid={`edit-${parcelle.id}`}
                       >
                         <Edit2 className="w-4 h-4" />
@@ -283,20 +540,21 @@ const ParcellesTab = ({ parcelles, onUpdate, onDelete, getAuthHeaders }) => {
                         size="sm"
                         variant="ghost"
                         onClick={() => setDeleteConfirm(parcelle)}
-                        className="text-gray-400 hover:text-red-400"
+                        className="text-gray-400 hover:text-red-400 hover:bg-red-500/10"
                         data-testid={`delete-${parcelle.id}`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
+      {/* Edit Dialog */}
       {editingParcelle && (
         <ParcelleEditDialog
           parcelle={editingParcelle}
@@ -306,24 +564,23 @@ const ParcellesTab = ({ parcelles, onUpdate, onDelete, getAuthHeaders }) => {
         />
       )}
 
+      {/* Delete Confirmation */}
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <DialogContent className="bg-[#0d1410] border-white/10">
           <DialogHeader>
-            <DialogTitle className="text-white">{t('msg_confirm_delete')}</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Cette action est irréversible. La parcelle "{deleteConfirm?.nom}" sera supprimée.
+            <DialogTitle className="text-white font-playfair">Confirmer la suppression</DialogTitle>
+            <DialogDescription className="text-gray-400 font-montserrat">
+              Cette action est irréversible. La parcelle "{deleteConfirm?.nom}" sera supprimée définitivement.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-              {t('action_cancel')}
-            </Button>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Annuler</Button>
             <Button 
               variant="destructive" 
               onClick={handleDelete}
               data-testid="confirm-delete"
             >
-              {t('action_delete')}
+              Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -334,7 +591,6 @@ const ParcellesTab = ({ parcelles, onUpdate, onDelete, getAuthHeaders }) => {
 
 // Parcelle Edit Dialog
 const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
-  const { t } = useLanguage();
   const [formData, setFormData] = useState(parcelle);
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -404,33 +660,30 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="bg-[#0d1410] border-white/10 max-w-2xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="text-white font-playfair">{t('action_edit')}: {parcelle.nom}</DialogTitle>
+          <DialogTitle className="text-white font-playfair text-xl">Modifier: {parcelle.nom}</DialogTitle>
         </DialogHeader>
         
         <ScrollArea className="max-h-[60vh] pr-4">
           <Tabs defaultValue="info" className="w-full">
-            <TabsList className="w-full bg-white/5 p-1 rounded-lg grid grid-cols-3">
-              <TabsTrigger value="info">Informations</TabsTrigger>
-              <TabsTrigger value="prix">Prix</TabsTrigger>
-              <TabsTrigger value="images">Images</TabsTrigger>
+            <TabsList className="w-full bg-white/5 p-1 rounded-xl grid grid-cols-3">
+              <TabsTrigger value="info" className="rounded-lg">Informations</TabsTrigger>
+              <TabsTrigger value="prix" className="rounded-lg">Prix</TabsTrigger>
+              <TabsTrigger value="images" className="rounded-lg">Images</TabsTrigger>
             </TabsList>
 
             <TabsContent value="info" className="mt-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-gray-400 text-sm mb-2 block">{t('field_nom')}</label>
+                  <label className="text-gray-400 text-sm mb-2 block font-montserrat">Nom</label>
                   <Input
                     value={formData.nom}
                     onChange={(e) => handleChange('nom', e.target.value)}
-                    className="input-dark"
+                    className="bg-white/5 border-white/10 text-white"
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm mb-2 block">{t('field_type')}</label>
-                  <Select
-                    value={formData.type_projet}
-                    onValueChange={(v) => handleChange('type_projet', v)}
-                  >
+                  <label className="text-gray-400 text-sm mb-2 block font-montserrat">Type</label>
+                  <Select value={formData.type_projet} onValueChange={(v) => handleChange('type_projet', v)}>
                     <SelectTrigger className="bg-white/5 border-white/10">
                       <SelectValue />
                     </SelectTrigger>
@@ -446,20 +699,17 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-gray-400 text-sm mb-2 block">{t('field_superficie')}</label>
+                  <label className="text-gray-400 text-sm mb-2 block font-montserrat">Superficie</label>
                   <Input
                     type="number"
                     value={formData.superficie}
                     onChange={(e) => handleChange('superficie', parseFloat(e.target.value))}
-                    className="input-dark"
+                    className="bg-white/5 border-white/10 text-white"
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm mb-2 block">{t('field_configuration')}</label>
-                  <Select
-                    value={formData.configuration}
-                    onValueChange={(v) => handleChange('configuration', v)}
-                  >
+                  <label className="text-gray-400 text-sm mb-2 block font-montserrat">Configuration</label>
+                  <Select value={formData.configuration} onValueChange={(v) => handleChange('configuration', v)}>
                     <SelectTrigger className="bg-white/5 border-white/10">
                       <SelectValue />
                     </SelectTrigger>
@@ -473,11 +723,11 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
               </div>
 
               <div>
-                <label className="text-gray-400 text-sm mb-2 block">{t('field_atouts')}</label>
+                <label className="text-gray-400 text-sm mb-2 block font-montserrat">Atouts</label>
                 <Textarea
                   value={formData.atouts}
                   onChange={(e) => handleChange('atouts', e.target.value)}
-                  className="input-dark"
+                  className="bg-white/5 border-white/10 text-white"
                   rows={3}
                 />
               </div>
@@ -486,21 +736,21 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
             <TabsContent value="prix" className="mt-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-gray-400 text-sm mb-2 block">{t('field_prix_m2')} (FCFA)</label>
+                  <label className="text-gray-400 text-sm mb-2 block font-montserrat">Prix/m² (FCFA)</label>
                   <Input
                     type="number"
                     value={formData.prix_m2}
                     onChange={(e) => handleChange('prix_m2', parseFloat(e.target.value))}
-                    className="input-dark"
+                    className="bg-white/5 border-white/10 text-white"
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm mb-2 block">{t('field_valeur_globale')} (FCFA)</label>
+                  <label className="text-gray-400 text-sm mb-2 block font-montserrat">Valeur globale (FCFA)</label>
                   <Input
                     type="number"
                     value={formData.valeur_globale}
                     onChange={(e) => handleChange('valeur_globale', parseFloat(e.target.value))}
-                    className="input-dark"
+                    className="bg-white/5 border-white/10 text-white"
                   />
                 </div>
               </div>
@@ -508,32 +758,22 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
 
             <TabsContent value="images" className="mt-4 space-y-4">
               <div>
-                <label className="text-gray-400 text-sm mb-2 block">Photos du site</label>
+                <label className="text-gray-400 text-sm mb-2 block font-montserrat">Photos du site</label>
                 <div className="grid grid-cols-3 gap-3">
                   {formData.photos?.map((url, i) => (
-                    <div key={i} className="aspect-video bg-white/5 rounded-lg overflow-hidden relative group">
+                    <div key={i} className="aspect-video bg-white/5 rounded-lg overflow-hidden">
                       <img src={url} alt="" className="w-full h-full object-cover" />
                     </div>
                   ))}
                   <label className="aspect-video bg-white/5 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:border-green-500/50 transition-colors">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageUpload(e, 'photo')}
-                      disabled={uploadingImage}
-                    />
-                    {uploadingImage ? (
-                      <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Plus className="w-6 h-6 text-gray-500" />
-                    )}
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'photo')} disabled={uploadingImage} />
+                    {uploadingImage ? <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" /> : <Plus className="w-6 h-6 text-gray-500" />}
                   </label>
                 </div>
               </div>
 
               <div>
-                <label className="text-gray-400 text-sm mb-2 block">Vues drone</label>
+                <label className="text-gray-400 text-sm mb-2 block font-montserrat">Vues drone</label>
                 <div className="grid grid-cols-3 gap-3">
                   {formData.vues_drone?.map((url, i) => (
                     <div key={i} className="aspect-video bg-white/5 rounded-lg overflow-hidden">
@@ -541,18 +781,8 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
                     </div>
                   ))}
                   <label className="aspect-video bg-white/5 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:border-green-500/50 transition-colors">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageUpload(e, 'drone')}
-                      disabled={uploadingImage}
-                    />
-                    {uploadingImage ? (
-                      <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Plus className="w-6 h-6 text-gray-500" />
-                    )}
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'drone')} disabled={uploadingImage} />
+                    {uploadingImage ? <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" /> : <Plus className="w-6 h-6 text-gray-500" />}
                   </label>
                 </div>
               </div>
@@ -561,21 +791,9 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
         </ScrollArea>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{t('action_cancel')}</Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={loading}
-            className="btn-primary"
-            data-testid="save-parcelle"
-          >
-            {loading ? (
-              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                {t('action_save')}
-              </>
-            )}
+          <Button variant="outline" onClick={onClose}>Annuler</Button>
+          <Button onClick={handleSubmit} disabled={loading} className="bg-gradient-to-r from-green-500 to-green-600 text-black hover:from-green-600 hover:to-green-700" data-testid="save-parcelle">
+            {loading ? <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4 mr-2" />Enregistrer</>}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -588,18 +806,11 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
   const [codes, setCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [newCode, setNewCode] = useState({
-    client_name: '',
-    client_email: '',
-    parcelle_ids: [],
-    expires_hours: 72
-  });
+  const [newCode, setNewCode] = useState({ client_name: '', client_email: '', parcelle_ids: [], expires_hours: 72 });
 
   const fetchCodes = async () => {
     try {
-      const response = await axios.get(`${API}/admin/access-codes`, {
-        headers: getAuthHeaders()
-      });
+      const response = await axios.get(`${API}/admin/access-codes`, { headers: getAuthHeaders() });
       setCodes(response.data.access_codes || []);
     } catch (error) {
       console.error('Failed to fetch codes:', error);
@@ -607,31 +818,16 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchCodes();
-  }, []);
+  useEffect(() => { fetchCodes(); }, []);
 
   const handleCreateCode = async () => {
     if (!newCode.client_name || !newCode.client_email) {
       toast.error('Nom et email requis');
       return;
     }
-
     try {
-      const response = await axios.post(
-        `${API}/admin/access-codes`,
-        newCode,
-        { headers: getAuthHeaders() }
-      );
-      
-      toast.success(
-        <div>
-          <p className="font-medium">Code généré avec succès</p>
-          <p className="text-lg font-mono mt-1">{response.data.code}</p>
-        </div>,
-        { duration: 10000 }
-      );
-      
+      const response = await axios.post(`${API}/admin/access-codes`, newCode, { headers: getAuthHeaders() });
+      toast.success(<div><p className="font-medium">Code généré</p><p className="text-lg font-mono mt-1">{response.data.code}</p></div>, { duration: 10000 });
       setShowCreateDialog(false);
       setNewCode({ client_name: '', client_email: '', parcelle_ids: [], expires_hours: 72 });
       fetchCodes();
@@ -642,9 +838,7 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
 
   const handleRevokeCode = async (codeId) => {
     try {
-      await axios.delete(`${API}/admin/access-codes/${codeId}`, {
-        headers: getAuthHeaders()
-      });
+      await axios.delete(`${API}/admin/access-codes/${codeId}`, { headers: getAuthHeaders() });
       toast.success('Code révoqué');
       fetchCodes();
     } catch (error) {
@@ -660,101 +854,65 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div>
-          <h2 className="font-playfair text-2xl font-bold text-white mb-2">Codes d'accès</h2>
-          <p className="text-gray-400">Gérez les codes d'accès aux documents</p>
-        </div>
-        <Button 
-          onClick={() => setShowCreateDialog(true)}
-          className="btn-primary"
-          data-testid="create-code-btn"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nouveau code
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <h1 className="font-playfair text-3xl font-bold text-white mb-2">Codes d'accès</h1>
+          <p className="font-montserrat text-gray-400">Gérez les codes d'accès aux documents confidentiels</p>
+        </motion.div>
+        <Button onClick={() => setShowCreateDialog(true)} className="bg-gradient-to-r from-green-500 to-green-600 text-black hover:from-green-600 hover:to-green-700" data-testid="create-code-btn">
+          <Plus className="w-4 h-4 mr-2" />Nouveau code
         </Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="stat-card">
-          <div className="stat-value text-white">{codes.length}</div>
-          <div className="stat-label">Codes générés</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value text-green-400">{codes.filter(c => c.active && !c.is_expired).length}</div>
-          <div className="stat-label">Codes actifs</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value text-red-400">{codes.filter(c => !c.active || c.is_expired).length}</div>
-          <div className="stat-label">Codes expirés/révoqués</div>
-        </div>
+        <ModernStatCard icon={Key} label="Codes générés" value={codes.length} color="bg-gradient-to-br from-blue-500 to-blue-600" />
+        <ModernStatCard icon={CheckCircle} label="Codes actifs" value={codes.filter(c => c.active && !c.is_expired).length} color="bg-gradient-to-br from-green-500 to-green-600" />
+        <ModernStatCard icon={AlertCircle} label="Expirés/Révoqués" value={codes.filter(c => !c.active || c.is_expired).length} color="bg-gradient-to-br from-red-500 to-red-600" />
       </div>
 
-      {/* Codes List */}
-      <div className="card-glass overflow-hidden">
+      {/* Codes Table */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="data-table">
+          <table className="w-full">
             <thead>
-              <tr>
-                <th>Code</th>
-                <th>Client</th>
-                <th>Email</th>
-                <th>Expiration</th>
-                <th>Statut</th>
-                <th>Actions</th>
+              <tr className="border-b border-white/10">
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Code</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Client</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Email</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Expiration</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Statut</th>
+                <th className="text-right p-4 font-montserrat text-gray-400 text-sm font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-white/5">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-gray-500">
-                    Chargement...
-                  </td>
-                </tr>
+                <tr><td colSpan={6} className="text-center py-8 text-gray-500">Chargement...</td></tr>
               ) : codes.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-gray-500">
-                    Aucun code d'accès
-                  </td>
-                </tr>
+                <tr><td colSpan={6} className="text-center py-8 text-gray-500">Aucun code d'accès</td></tr>
               ) : (
                 codes.map((code) => (
-                  <tr key={code.id}>
-                    <td>
+                  <tr key={code.id} className="hover:bg-white/5 transition-colors">
+                    <td className="p-4">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-green-400 bg-green-500/10 px-2 py-1 rounded">
-                          {code.code}
-                        </span>
-                        <button 
-                          onClick={() => copyCode(code.code)}
-                          className="text-gray-500 hover:text-white"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </button>
+                        <span className="font-mono text-green-400 bg-green-500/10 px-2 py-1 rounded">{code.code}</span>
+                        <button onClick={() => copyCode(code.code)} className="text-gray-500 hover:text-white"><Copy className="w-4 h-4" /></button>
                       </div>
                     </td>
-                    <td className="text-white">{code.client_name}</td>
-                    <td className="text-gray-400">{code.client_email}</td>
-                    <td className="text-gray-400">
-                      {new Date(code.expires_at).toLocaleDateString('fr-FR')}
-                    </td>
-                    <td>
+                    <td className="p-4 font-montserrat text-white">{code.client_name}</td>
+                    <td className="p-4 font-montserrat text-gray-400">{code.client_email}</td>
+                    <td className="p-4 font-montserrat text-gray-400">{new Date(code.expires_at).toLocaleDateString('fr-FR')}</td>
+                    <td className="p-4">
                       {!code.active ? (
-                        <Badge className="bg-red-500/20 text-red-400">Révoqué</Badge>
+                        <Badge className="bg-red-500/20 text-red-400 border border-red-500/30">Révoqué</Badge>
                       ) : code.is_expired ? (
-                        <Badge className="bg-gray-500/20 text-gray-400">Expiré</Badge>
+                        <Badge className="bg-gray-500/20 text-gray-400 border border-gray-500/30">Expiré</Badge>
                       ) : (
-                        <Badge className="bg-green-500/20 text-green-400">Actif</Badge>
+                        <Badge className="bg-green-500/20 text-green-400 border border-green-500/30">Actif</Badge>
                       )}
                     </td>
-                    <td>
+                    <td className="p-4 text-right">
                       {code.active && !code.is_expired && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleRevokeCode(code.id)}
-                          className="text-red-400 hover:text-red-300"
-                        >
+                        <Button size="sm" variant="ghost" onClick={() => handleRevokeCode(code.id)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
                           <EyeOff className="w-4 h-4" />
                         </Button>
                       )}
@@ -765,48 +923,28 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Create Code Dialog */}
+      {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="bg-[#0d1410] border-white/10">
           <DialogHeader>
             <DialogTitle className="text-white font-playfair">Générer un code d'accès</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Créez un code temporaire pour un client
-            </DialogDescription>
+            <DialogDescription className="text-gray-400 font-montserrat">Créez un code temporaire pour un client</DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4 py-4">
             <div>
-              <label className="text-gray-400 text-sm mb-2 block">Nom du client *</label>
-              <Input
-                value={newCode.client_name}
-                onChange={(e) => setNewCode({ ...newCode, client_name: e.target.value })}
-                className="input-dark"
-                placeholder="Jean Dupont"
-                data-testid="client-name-input"
-              />
+              <label className="text-gray-400 text-sm mb-2 block font-montserrat">Nom du client *</label>
+              <Input value={newCode.client_name} onChange={(e) => setNewCode({ ...newCode, client_name: e.target.value })} className="bg-white/5 border-white/10 text-white" placeholder="Jean Dupont" data-testid="client-name-input" />
             </div>
             <div>
-              <label className="text-gray-400 text-sm mb-2 block">Email *</label>
-              <Input
-                value={newCode.client_email}
-                onChange={(e) => setNewCode({ ...newCode, client_email: e.target.value })}
-                className="input-dark"
-                placeholder="jean@exemple.com"
-                data-testid="client-email-input"
-              />
+              <label className="text-gray-400 text-sm mb-2 block font-montserrat">Email *</label>
+              <Input value={newCode.client_email} onChange={(e) => setNewCode({ ...newCode, client_email: e.target.value })} className="bg-white/5 border-white/10 text-white" placeholder="jean@exemple.com" data-testid="client-email-input" />
             </div>
             <div>
-              <label className="text-gray-400 text-sm mb-2 block">Durée de validité</label>
-              <Select
-                value={String(newCode.expires_hours)}
-                onValueChange={(v) => setNewCode({ ...newCode, expires_hours: parseInt(v) })}
-              >
-                <SelectTrigger className="bg-white/5 border-white/10">
-                  <SelectValue />
-                </SelectTrigger>
+              <label className="text-gray-400 text-sm mb-2 block font-montserrat">Durée de validité</label>
+              <Select value={String(newCode.expires_hours)} onValueChange={(v) => setNewCode({ ...newCode, expires_hours: parseInt(v) })}>
+                <SelectTrigger className="bg-white/5 border-white/10"><SelectValue /></SelectTrigger>
                 <SelectContent className="bg-[#0d1410] border-white/10">
                   <SelectItem value="24">24 heures</SelectItem>
                   <SelectItem value="72">72 heures (3 jours)</SelectItem>
@@ -815,39 +953,10 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <label className="text-gray-400 text-sm mb-2 block">Accès aux parcelles</label>
-              <Select
-                value={newCode.parcelle_ids.length === 0 ? 'all' : 'specific'}
-                onValueChange={(v) => {
-                  if (v === 'all') {
-                    setNewCode({ ...newCode, parcelle_ids: [] });
-                  }
-                }}
-              >
-                <SelectTrigger className="bg-white/5 border-white/10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-[#0d1410] border-white/10">
-                  <SelectItem value="all">Toutes les parcelles</SelectItem>
-                  <SelectItem value="specific">Parcelles spécifiques</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
-
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-              Annuler
-            </Button>
-            <Button 
-              onClick={handleCreateCode}
-              className="btn-primary"
-              data-testid="generate-code-btn"
-            >
-              <Key className="w-4 h-4 mr-2" />
-              Générer
-            </Button>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Annuler</Button>
+            <Button onClick={handleCreateCode} className="bg-gradient-to-r from-green-500 to-green-600 text-black" data-testid="generate-code-btn"><Key className="w-4 h-4 mr-2" />Générer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -880,97 +989,65 @@ const DownloadLogsTab = ({ getAuthHeaders }) => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="font-playfair text-2xl font-bold text-white mb-2">Journal des téléchargements</h2>
-        <p className="text-gray-400">Traçabilité des accès aux documents</p>
-      </div>
+      <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+        <h1 className="font-playfair text-3xl font-bold text-white mb-2">Journal des téléchargements</h1>
+        <p className="font-montserrat text-gray-400">Traçabilité des accès aux documents</p>
+      </motion.div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="stat-card">
-          <div className="stat-value text-white">{stats.total_downloads}</div>
-          <div className="stat-label">Total téléchargements</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value text-green-400">{Object.keys(stats.by_client || {}).length}</div>
-          <div className="stat-label">Clients uniques</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value text-blue-400">{Object.keys(stats.by_parcelle || {}).length}</div>
-          <div className="stat-label">Parcelles consultées</div>
-        </div>
+        <ModernStatCard icon={Download} label="Total téléchargements" value={stats.total_downloads} color="bg-gradient-to-br from-blue-500 to-blue-600" />
+        <ModernStatCard icon={Users} label="Clients uniques" value={Object.keys(stats.by_client || {}).length} color="bg-gradient-to-br from-green-500 to-green-600" />
+        <ModernStatCard icon={Map} label="Parcelles consultées" value={Object.keys(stats.by_parcelle || {}).length} color="bg-gradient-to-br from-purple-500 to-purple-600" />
       </div>
 
       {/* Logs Table */}
-      <div className="card-glass overflow-hidden">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="data-table">
+          <table className="w-full">
             <thead>
-              <tr>
-                <th>Date/Heure</th>
-                <th>Client</th>
-                <th>Code</th>
-                <th>Parcelle</th>
-                <th>Document</th>
+              <tr className="border-b border-white/10">
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Date/Heure</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Client</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Code</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Parcelle</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Document</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-white/5">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-8 text-gray-500">
-                    Chargement...
-                  </td>
-                </tr>
+                <tr><td colSpan={5} className="text-center py-8 text-gray-500">Chargement...</td></tr>
               ) : logs.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-8 text-gray-500">
-                    <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    Aucun téléchargement enregistré
-                  </td>
-                </tr>
+                <tr><td colSpan={5} className="text-center py-8 text-gray-500"><FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />Aucun téléchargement enregistré</td></tr>
               ) : (
                 logs.map((log) => (
-                  <tr key={log.id}>
-                    <td className="text-gray-400">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        {new Date(log.timestamp).toLocaleString('fr-FR')}
-                      </div>
-                    </td>
-                    <td className="text-white font-medium">{log.client_name}</td>
-                    <td>
-                      <span className="font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded text-sm">
-                        {log.code}
-                      </span>
-                    </td>
-                    <td className="text-gray-400">{log.parcelle_id}</td>
-                    <td className="text-gray-400">{log.document_type}</td>
+                  <tr key={log.id} className="hover:bg-white/5 transition-colors">
+                    <td className="p-4 font-montserrat text-gray-400"><div className="flex items-center gap-2"><Clock className="w-4 h-4" />{new Date(log.timestamp).toLocaleString('fr-FR')}</div></td>
+                    <td className="p-4 font-montserrat text-white font-medium">{log.client_name}</td>
+                    <td className="p-4"><span className="font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded text-sm">{log.code}</span></td>
+                    <td className="p-4 font-montserrat text-gray-400">{log.parcelle_id}</td>
+                    <td className="p-4 font-montserrat text-gray-400">{log.document_type}</td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
       {/* Top Clients */}
       {Object.keys(stats.by_client || {}).length > 0 && (
-        <div className="card-glass p-6">
-          <h3 className="font-playfair text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Users className="w-5 h-5 text-green-400" />
-            Top clients
-          </h3>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 p-6">
+          <h3 className="font-playfair text-xl font-bold text-white mb-4 flex items-center gap-2"><Users className="w-5 h-5 text-green-400" />Top clients</h3>
           <div className="space-y-3">
             {Object.entries(stats.by_client).slice(0, 5).map(([client, data]) => (
-              <div key={client} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                <span className="text-white font-medium">{client}</span>
-                <Badge className="bg-green-500/20 text-green-400">
-                  {data.count} téléchargement(s)
-                </Badge>
+              <div key={client} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                <span className="font-montserrat text-white font-medium">{client}</span>
+                <Badge className="bg-green-500/20 text-green-400 border border-green-500/30">{data.count} téléchargement(s)</Badge>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );
@@ -978,7 +1055,6 @@ const DownloadLogsTab = ({ getAuthHeaders }) => {
 
 // KMZ Import Tab
 const KMZTab = ({ onImport, getAuthHeaders }) => {
-  const { t } = useLanguage();
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [parsedParcelles, setParsedParcelles] = useState([]);
@@ -986,30 +1062,17 @@ const KMZTab = ({ onImport, getAuthHeaders }) => {
   const handleDrop = useCallback(async (e) => {
     e.preventDefault();
     setDragOver(false);
-    
     const file = e.dataTransfer?.files[0] || e.target?.files[0];
     if (!file) return;
-
     if (!file.name.endsWith('.kmz') && !file.name.endsWith('.kml')) {
       toast.error('Fichier KMZ ou KML requis');
       return;
     }
-
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
-
     try {
-      const response = await axios.post(
-        `${API}/admin/upload/kmz`,
-        formData,
-        { 
-          headers: { 
-            ...getAuthHeaders(),
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
+      const response = await axios.post(`${API}/admin/upload/kmz`, formData, { headers: { ...getAuthHeaders(), 'Content-Type': 'multipart/form-data' } });
       setParsedParcelles(response.data.parcelles);
       toast.success(response.data.message);
     } catch (error) {
@@ -1020,13 +1083,8 @@ const KMZTab = ({ onImport, getAuthHeaders }) => {
 
   const handleImport = async () => {
     if (parsedParcelles.length === 0) return;
-
     try {
-      await axios.post(
-        `${API}/admin/parcelles/import`,
-        parsedParcelles,
-        { headers: getAuthHeaders() }
-      );
+      await axios.post(`${API}/admin/parcelles/import`, parsedParcelles, { headers: getAuthHeaders() });
       toast.success('Parcelles importées avec succès');
       onImport();
       setParsedParcelles([]);
@@ -1037,66 +1095,45 @@ const KMZTab = ({ onImport, getAuthHeaders }) => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="font-playfair text-2xl font-bold text-white mb-2">{t('admin_kmz')}</h2>
-        <p className="text-gray-400">Importez un fichier KMZ pour ajouter de nouvelles parcelles</p>
-      </div>
+      <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+        <h1 className="font-playfair text-3xl font-bold text-white mb-2">Import KMZ</h1>
+        <p className="font-montserrat text-gray-400">Importez un fichier KMZ pour ajouter de nouvelles parcelles</p>
+      </motion.div>
 
-      <div
-        className={`upload-zone ${dragOver ? 'dragover' : ''}`}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`relative rounded-2xl border-2 border-dashed p-12 text-center transition-all ${dragOver ? 'border-green-500 bg-green-500/10' : 'border-white/20 bg-white/5'}`}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         data-testid="kmz-dropzone"
       >
-        <input
-          type="file"
-          accept=".kmz,.kml"
-          onChange={handleDrop}
-          className="hidden"
-          id="kmz-upload"
-        />
+        <input type="file" accept=".kmz,.kml" onChange={handleDrop} className="hidden" id="kmz-upload" />
         <label htmlFor="kmz-upload" className="cursor-pointer">
           {uploading ? (
-            <div className="w-12 h-12 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <div className="w-16 h-16 border-3 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           ) : (
-            <FileUp className="w-12 h-12 text-green-400 mx-auto mb-4" />
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500/20 to-green-500/5 flex items-center justify-center mx-auto mb-4">
+              <Upload className="w-8 h-8 text-green-400" />
+            </div>
           )}
-          <p className="text-white font-medium mb-2">{t('admin_upload_kmz')}</p>
-          <p className="text-gray-500 text-sm">{t('admin_drag_drop')}</p>
+          <p className="font-montserrat text-white font-medium text-lg mb-2">Glissez votre fichier KMZ ici</p>
+          <p className="font-montserrat text-gray-500 text-sm">ou cliquez pour sélectionner un fichier</p>
         </label>
-      </div>
+      </motion.div>
 
       {parsedParcelles.length > 0 && (
-        <motion.div 
-          className="card-glass p-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-playfair text-lg font-semibold text-white">
-              {parsedParcelles.length} {t('admin_detected')}
-            </h3>
-            <Button 
-              onClick={handleImport}
-              className="btn-primary"
-              data-testid="import-parcelles"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {t('action_import')}
-            </Button>
+            <h3 className="font-playfair text-xl font-bold text-white">{parsedParcelles.length} parcelles détectées</h3>
+            <Button onClick={handleImport} className="bg-gradient-to-r from-green-500 to-green-600 text-black" data-testid="import-parcelles"><Plus className="w-4 h-4 mr-2" />Importer</Button>
           </div>
-          
           <div className="space-y-3">
             {parsedParcelles.map((p, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                  <span className="text-white">{p.nom}</span>
-                </div>
-                <span className="text-gray-500 text-sm">
-                  {p.coordinates?.length || 0} points
-                </span>
+              <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                <div className="flex items-center gap-3"><CheckCircle className="w-4 h-4 text-green-400" /><span className="font-montserrat text-white">{p.nom}</span></div>
+                <span className="font-montserrat text-gray-500 text-sm">{p.coordinates?.length || 0} points</span>
               </div>
             ))}
           </div>
@@ -1108,7 +1145,6 @@ const KMZTab = ({ onImport, getAuthHeaders }) => {
 
 // Main Admin Page
 export default function AdminPage() {
-  const { t } = useLanguage();
   const { isAuthenticated, loading: authLoading, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -1151,36 +1187,17 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050a07] flex" data-testid="admin-page">
+    <div className="min-h-screen bg-gradient-to-br from-[#050a07] via-[#071210] to-[#050a07] flex" data-testid="admin-page">
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       
       <main className="flex-1 p-6 lg:p-8 overflow-auto">
-        {activeTab === 'dashboard' && (
-          <DashboardTab stats={stats} parcelles={parcelles} />
-        )}
-        {activeTab === 'parcelles' && (
-          <ParcellesTab 
-            parcelles={parcelles} 
-            onUpdate={fetchData}
-            onDelete={fetchData}
-            getAuthHeaders={getAuthHeaders}
-          />
-        )}
-        {activeTab === 'access' && (
-          <AccessCodesTab 
-            getAuthHeaders={getAuthHeaders}
-            parcelles={parcelles}
-          />
-        )}
-        {activeTab === 'logs' && (
-          <DownloadLogsTab getAuthHeaders={getAuthHeaders} />
-        )}
-        {activeTab === 'kmz' && (
-          <KMZTab 
-            onImport={fetchData}
-            getAuthHeaders={getAuthHeaders}
-          />
-        )}
+        <AnimatePresence mode="wait">
+          {activeTab === 'dashboard' && <DashboardTab key="dashboard" stats={stats} parcelles={parcelles} />}
+          {activeTab === 'parcelles' && <ParcellesTab key="parcelles" parcelles={parcelles} onUpdate={fetchData} onDelete={fetchData} getAuthHeaders={getAuthHeaders} />}
+          {activeTab === 'access' && <AccessCodesTab key="access" getAuthHeaders={getAuthHeaders} parcelles={parcelles} />}
+          {activeTab === 'logs' && <DownloadLogsTab key="logs" getAuthHeaders={getAuthHeaders} />}
+          {activeTab === 'kmz' && <KMZTab key="kmz" onImport={fetchData} getAuthHeaders={getAuthHeaders} />}
+        </AnimatePresence>
       </main>
     </div>
   );
