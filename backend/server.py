@@ -377,14 +377,25 @@ async def get_available_documents(parcelle_id: str):
         if p["id"] == parcelle_id:
             official_docs = p.get("official_documents", {})
             
-            # Build list of available documents
+            # Build list of available documents - support both single and multiple files
             available = []
-            for doc_type, doc_info in official_docs.items():
+            for doc_type, doc_data in official_docs.items():
+                # Handle both single doc (dict) and multiple docs (list)
+                if isinstance(doc_data, list):
+                    doc_list = doc_data
+                else:
+                    doc_list = [doc_data]
+                
+                # Get latest upload date
+                latest_upload = max((d.get("uploaded_at", "") for d in doc_list), default="")
+                
                 available.append({
                     "type": doc_type,
                     "label": DOCUMENT_TYPE_LABELS.get(doc_type, doc_type.replace('_', ' ').title()),
                     "has_file": True,
-                    "uploaded_at": doc_info.get("uploaded_at")
+                    "file_count": len(doc_list),
+                    "uploaded_at": latest_upload,
+                    "files": [{"id": d.get("id"), "name": d.get("original_name", d.get("filename"))} for d in doc_list]
                 })
             
             return {
