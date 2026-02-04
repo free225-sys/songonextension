@@ -672,11 +672,11 @@ export const ParcelleDetail = ({ parcelle, onClose, isOpen }) => {
                 </h3>
                 <div className="space-y-3">
                   <a 
-                    href="mailto:contact@onegreendev.com"
+                    href="mailto:contact@songonextension.com"
                     className="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
                   >
                     <Mail className="w-4 h-4 text-green-400" />
-                    <span className="text-white text-sm">contact@onegreendev.com</span>
+                    <span className="text-white text-sm">contact@songonextension.com</span>
                   </a>
                   <a 
                     href="tel:+22507000000"
