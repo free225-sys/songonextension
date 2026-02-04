@@ -579,37 +579,132 @@ async def send_document(
     send_method: str = Form(...),  # email or whatsapp
     recipient: str = Form(...)  # email address or phone number
 ):
-    """Send document via email or WhatsApp"""
+    """Send document via email with PDF attachment"""
     access_info = verify_access_code(code, parcelle_id)
     
     if not access_info:
         raise HTTPException(status_code=403, detail="Code d'accès invalide ou expiré")
     
-    # Log the send action
-    log_download(
-        code=code,
-        client_name=access_info["client_name"],
-        parcelle_id=parcelle_id,
-        document_type=f"{document_type}_sent_via_{send_method}",
-        document_name=f"{document_type}_{parcelle_id}_to_{recipient}"
-    )
+    client_name = access_info["client_name"]
     
-    # In production, integrate with email/WhatsApp API
-    # For now, return success with instructions
+    # Get parcelle info
+    data = load_data()
+    parcelle = None
+    for p in data.get("parcelles", []):
+        if p["id"] == parcelle_id:
+            parcelle = p
+            break
+    
+    if not parcelle:
+        raise HTTPException(status_code=404, detail="Parcelle non trouvée")
+    
     if send_method == "email":
-        return {
-            "success": True,
-            "message": f"Document envoyé par email à {recipient}",
-            "note": "En production, le document serait envoyé via un service d'email (SendGrid, etc.)"
-        }
+        # Generate watermarked PDF
+        official_docs = parcelle.get("official_documents", {})
+        
+        if document_type in official_docs:
+            # Use real uploaded document with watermark
+            doc_info = official_docs[document_type]
+            doc_path = Path(doc_info.get("path", ""))
+            
+            if doc_path.exists():
+                with open(doc_path, 'rb') as f:
+                    original_pdf = f.read()
+                try:
+                    pdf_content = add_watermark_to_pdf(original_pdf, client_name, code)
+                except Exception as e:
+                    logger.error(f"Error adding watermark: {e}")
+                    # Fallback to placeholder
+                    pdf_content = create_placeholder_acd_pdf(
+                        parcelle_nom=parcelle.get("nom", "Parcelle"),
+                        parcelle_ref=parcelle.get("reference_tf", "N/A"),
+                        client_name=client_name,
+                        access_code=code
+                    )
+            else:
+                raise HTTPException(status_code=404, detail="Fichier document non trouvé")
+        else:
+            # Generate placeholder PDF with watermark
+            if document_type == "acd":
+                pdf_content = create_placeholder_acd_pdf(
+                    parcelle_nom=parcelle.get("nom", "Parcelle"),
+                    parcelle_ref=parcelle.get("reference_tf", "N/A"),
+                    client_name=client_name,
+                    access_code=code
+                )
+            elif document_type == "plan":
+                pdf_content = create_placeholder_plan_pdf(
+                    parcelle_nom=parcelle.get("nom", "Parcelle"),
+                    parcelle_ref=parcelle.get("reference_tf", "N/A"),
+                    superficie=parcelle.get("superficie", 0),
+                    client_name=client_name,
+                    access_code=code
+                )
+            elif document_type == "titre_foncier":
+                pdf_content = create_placeholder_acd_pdf(
+                    parcelle_nom=parcelle.get("nom", "Parcelle"),
+                    parcelle_ref=parcelle.get("reference_tf", "N/A"),
+                    client_name=client_name,
+                    access_code=code
+                )
+            else:
+                pdf_content = create_placeholder_acd_pdf(
+                    parcelle_nom=parcelle.get("nom", "Parcelle"),
+                    parcelle_ref=parcelle.get("reference_tf", "N/A"),
+                    client_name=client_name,
+                    access_code=code
+                )
+        
+        # Generate filename
+        filename = f"{document_type.upper()}_{parcelle.get('nom', parcelle_id).replace(' ', '_')}.pdf"
+        
+        # Send email with attachment
+        result = await send_document_email(
+            recipient_email=recipient,
+            client_name=client_name,
+            parcelle_nom=parcelle.get("nom", "N/A"),
+            parcelle_ref=parcelle.get("reference_tf", "N/A"),
+            document_type=document_type,
+            pdf_content=pdf_content,
+            filename=filename
+        )
+        
+        # Log the send action
+        log_download(
+            code=code,
+            client_name=client_name,
+            parcelle_id=parcelle_id,
+            document_type=f"{document_type}_sent_via_email",
+            document_name=f"{document_type}_{parcelle_id}_to_{recipient}"
+        )
+        
+        if result.get("success"):
+            return {
+                "success": True,
+                "message": result.get("message"),
+                "email_id": result.get("email_id"),
+                "recipient": recipient
+            }
+        else:
+            if result.get("requires_config"):
+                raise HTTPException(status_code=503, detail=result.get("error"))
+            raise HTTPException(status_code=500, detail=result.get("error"))
+    
     elif send_method == "whatsapp":
-        # WhatsApp Business API would be used here
-        whatsapp_url = f"https://wa.me/{recipient.replace('+', '')}?text=Votre%20document%20{document_type}%20est%20prêt"
+        # WhatsApp link generation (handled on frontend now)
+        log_download(
+            code=code,
+            client_name=client_name,
+            parcelle_id=parcelle_id,
+            document_type=f"{document_type}_sent_via_whatsapp",
+            document_name=f"{document_type}_{parcelle_id}_to_{recipient}"
+        )
+        
+        whatsapp_url = f"https://wa.me/2250705509738?text=Bonjour%2C%20je%20suis%20{client_name.replace(' ', '%20')}..."
         return {
             "success": True,
-            "message": f"Lien WhatsApp généré pour {recipient}",
-            "whatsapp_url": whatsapp_url,
-            "note": "En production, utilisez l'API WhatsApp Business pour un envoi automatique"
+            "message": f"Redirection WhatsApp pour {recipient}",
+            "whatsapp_url": whatsapp_url
         }
     else:
         raise HTTPException(status_code=400, detail="Méthode d'envoi non supportée")
