@@ -414,10 +414,70 @@ const DocumentAccessSection = ({ parcelle, t }) => {
                 </div>
               </Button>
 
-              {/* WhatsApp Direct Link */}
+              {/* Email & WhatsApp Options */}
               <div className="border-t border-white/10 pt-4 mt-4">
-                <p className="text-gray-400 text-xs mb-3">Recevoir les documents via WhatsApp :</p>
+                <p className="text-gray-400 text-xs mb-3">Recevoir le document par :</p>
                 
+                {/* Email Option */}
+                {!showEmailForm ? (
+                  <Button
+                    onClick={() => setShowEmailForm(true)}
+                    variant="outline"
+                    className="w-full justify-start gap-3 border-white/10 hover:bg-white/5 mb-3"
+                    data-testid="email-option-btn"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div className="text-left flex-1">
+                      <span className="text-white font-medium block">Recevoir par Email</span>
+                      <span className="text-gray-500 text-xs">Document PDF envoyé dans votre boîte mail</span>
+                    </div>
+                  </Button>
+                ) : (
+                  <div className="bg-white/5 rounded-xl p-4 mb-3 space-y-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Mail className="w-4 h-4 text-blue-400" />
+                      <span className="text-white text-sm font-medium">Envoi par Email</span>
+                    </div>
+                    <Input
+                      type="email"
+                      value={emailAddress}
+                      onChange={(e) => setEmailAddress(e.target.value)}
+                      placeholder="votre@email.com"
+                      className="input-dark"
+                      data-testid="email-input"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => { setShowEmailForm(false); setEmailAddress(''); }}
+                        variant="outline"
+                        size="sm"
+                        className="border-white/10"
+                      >
+                        Annuler
+                      </Button>
+                      <Button
+                        onClick={handleSendEmail}
+                        disabled={sendingEmail || !emailAddress.trim()}
+                        size="sm"
+                        className="bg-blue-500 hover:bg-blue-600 text-white flex-1"
+                        data-testid="send-email-btn"
+                      >
+                        {sendingEmail ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <Mail className="w-4 h-4 mr-2" />
+                            Envoyer
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* WhatsApp Option */}
                 <a
                   href={`https://wa.me/2250705509738?text=${encodeURIComponent(
                     `Bonjour, je suis ${clientInfo?.client_name || 'Client'}. Je viens de débloquer l'accès pour la parcelle "${parcelle?.nom || 'N/A'}" (Réf: ${parcelle?.reference_tf || 'N/A'}) sur votre site Songon Extension. Merci de m'envoyer les documents officiels (${selectedDocument?.label || 'ACD/Titre Foncier'}) correspondants.`
@@ -436,10 +496,6 @@ const DocumentAccessSection = ({ parcelle, t }) => {
                   </div>
                   <ExternalLink className="w-4 h-4 text-[#25D366] group-hover:translate-x-1 transition-transform" />
                 </a>
-
-                <p className="text-gray-500 text-xs mt-3 text-center">
-                  Un message pré-rempli avec vos informations sera envoyé
-                </p>
               </div>
             </div>
           </div>
