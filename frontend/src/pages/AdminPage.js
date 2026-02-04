@@ -70,7 +70,7 @@ const ModernStatCard = ({ icon: Icon, label, value, trend, trendValue, color, de
 );
 
 // Admin Sidebar - Modern Design
-const AdminSidebar = ({ activeTab, setActiveTab }) => {
+const AdminSidebar = ({ activeTab, setActiveTab, notificationCount = 0 }) => {
   const { t } = useLanguage();
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -80,7 +80,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'parcelles', icon: Map, label: 'Parcelles' },
     { id: 'access', icon: Key, label: 'Codes d\'accès' },
-    { id: 'logs', icon: FileText, label: 'Journal' },
+    { id: 'logs', icon: FileText, label: 'Journal', badge: notificationCount },
     { id: 'kmz', icon: Upload, label: 'Import KMZ' },
   ];
 
@@ -120,7 +120,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
             transition={{ delay: index * 0.05 }}
             onClick={() => setActiveTab(item.id)}
             data-testid={`nav-${item.id}`}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-montserrat text-sm font-medium transition-all duration-200 ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-montserrat text-sm font-medium transition-all duration-200 relative ${
               activeTab === item.id
                 ? 'bg-gradient-to-r from-green-500/20 to-green-500/5 text-green-400 border border-green-500/20'
                 : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -128,6 +128,12 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
           >
             <item.icon className="w-5 h-5" />
             {!collapsed && <span>{item.label}</span>}
+            {/* Notification Badge */}
+            {item.badge > 0 && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center animate-pulse">
+                {item.badge > 9 ? '9+' : item.badge}
+              </span>
+            )}
           </motion.button>
         ))}
       </nav>
