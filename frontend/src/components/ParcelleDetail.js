@@ -4,7 +4,7 @@ import {
   X, MapPin, Ruler, TreePine, FileText, DollarSign, 
   TrendingUp, Image, Phone, Mail, Download, CheckCircle,
   Building, Mountain, Leaf, Lock, Unlock, Shield, AlertTriangle,
-  KeyRound, Eye, Send, MessageCircle, ExternalLink
+  KeyRound, Eye, MessageCircle, ExternalLink
 } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
