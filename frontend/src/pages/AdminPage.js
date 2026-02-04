@@ -785,22 +785,27 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
                 <div>
                   <label className="text-gray-400 text-sm mb-2 block font-montserrat">Nom</label>
                   <Input
-                    value={formData.nom}
+                    value={formData.nom || ''}
                     onChange={(e) => handleChange('nom', e.target.value)}
                     className="bg-white/5 border-white/10 text-white"
+                    data-testid="edit-nom"
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm mb-2 block font-montserrat">Type</label>
-                  <Select value={formData.type_projet} onValueChange={(v) => handleChange('type_projet', v)}>
-                    <SelectTrigger className="bg-white/5 border-white/10">
-                      <SelectValue />
+                  <label className="text-gray-400 text-sm mb-2 block font-montserrat">Type de parcelle</label>
+                  <Select 
+                    value={formData.type_projet || ''} 
+                    onValueChange={(v) => handleChange('type_projet', v)}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white" data-testid="edit-type">
+                      <SelectValue placeholder="Sélectionner un type" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#0d1410] border-white/10">
                       <SelectItem value="Golf">Golf</SelectItem>
                       <SelectItem value="Résidentiel">Résidentiel</SelectItem>
                       <SelectItem value="Mixte">Mixte</SelectItem>
                       <SelectItem value="Réserve foncière">Réserve foncière</SelectItem>
+                      <SelectItem value="Commercial">Commercial</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -808,24 +813,30 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-gray-400 text-sm mb-2 block font-montserrat">Superficie</label>
+                  <label className="text-gray-400 text-sm mb-2 block font-montserrat">Superficie (ha)</label>
                   <Input
                     type="number"
-                    value={formData.superficie}
-                    onChange={(e) => handleChange('superficie', parseFloat(e.target.value))}
+                    step="0.1"
+                    value={formData.superficie || ''}
+                    onChange={(e) => handleChange('superficie', parseFloat(e.target.value) || 0)}
                     className="bg-white/5 border-white/10 text-white"
+                    data-testid="edit-superficie"
                   />
                 </div>
                 <div>
                   <label className="text-gray-400 text-sm mb-2 block font-montserrat">Configuration</label>
-                  <Select value={formData.configuration} onValueChange={(v) => handleChange('configuration', v)}>
-                    <SelectTrigger className="bg-white/5 border-white/10">
-                      <SelectValue />
+                  <Select 
+                    value={formData.configuration || ''} 
+                    onValueChange={(v) => handleChange('configuration', v)}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white" data-testid="edit-config">
+                      <SelectValue placeholder="Sélectionner" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#0d1410] border-white/10">
                       <SelectItem value="Plat">Plat</SelectItem>
                       <SelectItem value="Vallonné">Vallonné</SelectItem>
                       <SelectItem value="En pente">En pente</SelectItem>
+                      <SelectItem value="Mixte">Mixte</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -834,10 +845,11 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
               <div>
                 <label className="text-gray-400 text-sm mb-2 block font-montserrat">Atouts</label>
                 <Textarea
-                  value={formData.atouts}
+                  value={formData.atouts || ''}
                   onChange={(e) => handleChange('atouts', e.target.value)}
                   className="bg-white/5 border-white/10 text-white"
                   rows={3}
+                  data-testid="edit-atouts"
                 />
               </div>
             </TabsContent>
