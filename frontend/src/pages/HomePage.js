@@ -440,13 +440,13 @@ const Footer = ({ t }) => (
         </div>
         <div className="flex items-center gap-6">
           <a 
-            href="https://onegreendev.com" 
+            href="https://songonextension.com" 
             target="_blank" 
             rel="noopener noreferrer"
             className="font-montserrat text-sm text-gray-400 hover:text-green-400 transition-colors flex items-center gap-2"
           >
             <ExternalLink className="w-4 h-4" />
-            onegreendev.com
+            songonextension.com
           </a>
         </div>
         <p className="font-montserrat text-gray-500 text-sm">
@@ -787,7 +787,7 @@ export default function HomePage() {
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <a 
-                  href="mailto:contact@onegreendev.com" 
+                  href="mailto:contact@songonextension.com" 
                   className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group"
                 >
                   <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
@@ -796,7 +796,7 @@ export default function HomePage() {
                   <div>
                     <span className="font-montserrat text-gray-400 text-xs block">Email</span>
                     <span className="font-montserrat text-white group-hover:text-green-400 transition-colors">
-                      contact@onegreendev.com
+                      contact@songonextension.com
                     </span>
                   </div>
                 </a>
