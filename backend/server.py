@@ -851,7 +851,7 @@ async def upload_official_document(
     file: UploadFile = File(...),
     username: str = Depends(verify_token)
 ):
-    """Upload official document (ACD, plan cadastral, etc.) for a parcelle"""
+    """Upload official document (ACD, plan cadastral, etc.) for a parcelle - supports multiple files per type"""
     allowed_types = ["acd", "plan", "extrait_cadastral", "titre_foncier", "autre"]
     if document_type not in allowed_types:
         raise HTTPException(status_code=400, detail=f"Type de document invalide. Types autorisés: {', '.join(allowed_types)}")
@@ -863,8 +863,9 @@ async def upload_official_document(
     parcelle_docs_dir = DOCUMENTS_DIR / parcelle_id
     parcelle_docs_dir.mkdir(exist_ok=True)
     
-    # Save file
-    filename = f"{document_type}_{uuid.uuid4().hex[:8]}.pdf"
+    # Save file with unique ID
+    doc_id = uuid.uuid4().hex[:8]
+    filename = f"{document_type}_{doc_id}.pdf"
     filepath = parcelle_docs_dir / filename
     
     with open(filepath, 'wb') as f:
@@ -876,6 +877,7 @@ async def upload_official_document(
     parcelles = data.get("parcelles", [])
     
     document_info = {
+        "id": doc_id,
         "type": document_type,
         "filename": filename,
         "original_name": file.filename,
@@ -890,18 +892,30 @@ async def upload_official_document(
             if "official_documents" not in parcelles[i]:
                 parcelles[i]["official_documents"] = {}
             
-            # Store document info by type
-            parcelles[i]["official_documents"][document_type] = document_info
+            # Support multiple documents per type - store as list
+            if document_type not in parcelles[i]["official_documents"]:
+                parcelles[i]["official_documents"][document_type] = []
+            
+            # Handle migration from single doc to list
+            existing = parcelles[i]["official_documents"][document_type]
+            if isinstance(existing, dict):
+                parcelles[i]["official_documents"][document_type] = [existing]
+            
+            # Add new document to list
+            parcelles[i]["official_documents"][document_type].append(document_info)
             
             data["parcelles"] = parcelles
             save_data(data)
             
-            logger.info(f"Official document uploaded: {document_type} for parcelle {parcelle_id}")
+            doc_count = len(parcelles[i]["official_documents"][document_type])
+            logger.info(f"Official document uploaded: {document_type} for parcelle {parcelle_id} (total: {doc_count})")
             return {
                 "success": True,
                 "document_type": document_type,
+                "document_id": doc_id,
                 "filename": filename,
-                "message": f"Document {document_type.upper()} uploadé avec succès"
+                "total_docs": doc_count,
+                "message": f"Document {document_type.upper()} uploadé avec succès ({doc_count} fichier(s))"
             }
     
     # Cleanup file if parcelle not found
