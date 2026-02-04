@@ -37,6 +37,13 @@ Tunnel d'accès:
 
 ## Ce qui a été implémenté
 
+### Version 1.6.0 - Intégration Email Resend (04/02/2026)
+- **Envoi automatique d'emails**: Les documents PDF filigranés peuvent être envoyés par email via Resend
+- **Template email professionnel**: Email HTML responsive avec design Songon Extension
+- **Pièce jointe PDF**: Document filigrané envoyé automatiquement en pièce jointe
+- **Service email_service.py**: Module dédié pour l'envoi d'emails avec Resend SDK
+- **Variables d'environnement**: `RESEND_API_KEY`, `SENDER_EMAIL` configurées
+
 ### Version 1.5.0 - Système Complet Documents ACD (03/02/2026)
 - **Tunnel d'accès sécurisé**: Documents bloqués par défaut, code requis
 - **Watermarking dynamique**: Filigrane avec nom du client sur chaque page PDF
