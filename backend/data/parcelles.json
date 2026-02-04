@@ -1251,6 +1251,16 @@
       "document_name": "acd_tf-223737_to_test@example.com",
       "timestamp": "2026-02-04T01:33:59.696948+00:00",
       "ip_address": "N/A"
+    },
+    {
+      "id": "b8eebd7c-04be-4f06-81dc-6195e7cb0370",
+      "code": "J7E7CN4J",
+      "client_name": "Test Client",
+      "parcelle_id": "tf-223737",
+      "document_type": "acd_sent_via_email",
+      "document_name": "acd_tf-223737_to_alidaziahet@gmail.com",
+      "timestamp": "2026-02-04T01:34:12.123000+00:00",
+      "ip_address": "N/A"
     }
   ]
 }
