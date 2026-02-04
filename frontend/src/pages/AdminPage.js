@@ -597,7 +597,17 @@ const ParcellesTab = ({ parcelles, onUpdate, onDelete, getAuthHeaders }) => {
 
 // Parcelle Edit Dialog
 const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
-  const [formData, setFormData] = useState(parcelle);
+  const [formData, setFormData] = useState({
+    ...parcelle,
+    type_projet: parcelle.type_projet || 'Résidentiel',
+    configuration: parcelle.configuration || 'Plat',
+    superficie: parcelle.superficie || 0,
+    prix_m2: parcelle.prix_m2 || 0,
+    valeur_globale: parcelle.valeur_globale || 0,
+    atouts: parcelle.atouts || '',
+    photos: parcelle.photos || [],
+    vues_drone: parcelle.vues_drone || []
+  });
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
