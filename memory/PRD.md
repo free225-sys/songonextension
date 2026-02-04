@@ -9,7 +9,7 @@ Développer l'application web Songon Extension (extension de onegreendev.com) in
 - Stockage: Fichier JSON local
 - Upload d'images: Oui
 - Multi-langue: Bilingue FR/EN
-- Sécurité documents: **Codes d'accès + Watermarking dynamique + Journal**
+- Sécurité documents: **Codes d'accès + Watermarking dynamique + Journal temps réel**
 - **Architecture: ONE-PAGE avec navigation fluide par ancres**
 - **Accès admin: CACHÉ (double-clic logo)**
 
@@ -23,6 +23,7 @@ Développer l'application web Songon Extension (extension de onegreendev.com) in
 - **Auth**: JWT (PyJWT)
 - **Export**: jsPDF + jspdf-autotable + xlsx + file-saver
 - **PDF Watermark**: PyPDF2 + ReportLab
+- **Email**: Resend SDK
 
 ### Système d'Accès aux Documents (ACD)
 ```
@@ -31,11 +32,19 @@ Tunnel d'accès:
 2. Visiteur entre son code d'accès
 3. Vérification API → Déverrouillage
 4. Choix: Visualiser | Télécharger | Email/WhatsApp
-5. PDF généré avec filigrane dynamique (nom client + code + date)
-6. Accès journalisé dans download_logs
+5. PDF généré avec filigrane: "Préparé pour [Client] | Document sécurisé par onegreendev"
+6. Accès journalisé en temps réel dans download_logs
 ```
 
 ## Ce qui a été implémenté
+
+### Version 1.7.0 - Phase Finale Sécurisation (04/02/2026)
+- **Filigrane amélioré**: Nouveau format "Préparé pour [Client] | Document sécurisé par onegreendev" en diagonale avec opacité légère
+- **Notifications Admin temps réel**: Badge rouge animé sur l'onglet Journal dans la sidebar
+- **Journal d'accès amélioré**: Section "Activité récente" avec temps relatif ("Il y a X min")
+- **Multi-documents par parcelle**: Support pour uploader plusieurs fichiers PDF par type de document
+- **Interface adaptative**: Affichage automatique selon le nombre de documents disponibles
+- **Polling automatique**: Actualisation des notifications toutes les 30 secondes
 
 ### Version 1.6.0 - Intégration Email Resend (04/02/2026)
 - **Envoi automatique d'emails**: Les documents PDF filigranés peuvent être envoyés par email via Resend
@@ -68,15 +77,16 @@ Tunnel d'accès:
 | `/api/documents/{parcelle_id}/{type}` | GET | Récupère document avec watermark |
 | `/api/documents/send` | POST | Envoie document par email/WhatsApp |
 | `/api/admin/download-logs` | GET | Journal des téléchargements |
+| `/api/admin/notifications` | GET | Notifications temps réel (NEW) |
+| `/api/admin/access-logs/realtime` | GET | Logs enrichis avec temps relatif (NEW) |
 
 ## Backlog Prioritaire
 
 ### P0 (Critique)
 - ✅ Intégration Resend pour envoi automatique d'emails
-
-### P1 (Important)
-- Support pour plusieurs documents par parcelle
-- Vrais documents PDF uploadés (remplacer placeholders)
+- ✅ Filigrane avec branding onegreendev
+- ✅ Notifications Admin temps réel
+- ✅ Multi-documents par parcelle
 
 ### P2 (Nice to have)
 - QR Code sur documents pour vérification
