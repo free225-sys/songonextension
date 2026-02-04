@@ -709,19 +709,37 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
     setUploadingDoc(false);
   };
 
-  // Handle document deletion
-  const handleDeleteDocument = async (docType) => {
+  // Handle document deletion - supports deleting specific file by ID
+  const handleDeleteDocument = async (docType, docId = null) => {
     try {
+      const params = docId ? `?document_id=${docId}` : '';
       await axios.delete(
-        `${API}/admin/document/${parcelle.id}/${docType}`,
+        `${API}/admin/document/${parcelle.id}/${docType}${params}`,
         { headers: getAuthHeaders() }
       );
       
-      setOfficialDocs(prev => {
-        const updated = { ...prev };
-        delete updated[docType];
-        return updated;
-      });
+      if (docId) {
+        // Remove specific document from list
+        setOfficialDocs(prev => {
+          const updated = { ...prev };
+          if (Array.isArray(updated[docType])) {
+            updated[docType] = updated[docType].filter(d => d.id !== docId);
+            if (updated[docType].length === 0) {
+              delete updated[docType];
+            }
+          } else {
+            delete updated[docType];
+          }
+          return updated;
+        });
+      } else {
+        // Remove all documents of this type
+        setOfficialDocs(prev => {
+          const updated = { ...prev };
+          delete updated[docType];
+          return updated;
+        });
+      }
       
       toast.success('Document supprimé');
     } catch (error) {
