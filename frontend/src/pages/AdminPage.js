@@ -386,7 +386,7 @@ const ParcellesTab = ({ parcelles, onUpdate, onDelete, getAuthHeaders }) => {
       doc.setFontSize(8);
       doc.setTextColor(128, 128, 128);
       doc.text(
-        `Page ${i} sur ${pageCount} | Songon Extension - onegreendev.com`,
+        `Page ${i} sur ${pageCount} | Songon Extension - songonextension.com`,
         doc.internal.pageSize.width / 2,
         doc.internal.pageSize.height - 10,
         { align: 'center' }

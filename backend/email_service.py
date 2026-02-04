@@ -122,7 +122,7 @@ def generate_email_html(client_name: str, parcelle_nom: str, parcelle_ref: str, 
                                     <tr>
                                         <td style="text-align: center;">
                                             <p style="color: #666; font-size: 14px; margin: 0 0 10px 0;">
-                                                📞 +225 07 05 50 97 38 &nbsp;&nbsp;|&nbsp;&nbsp; 📧 contact@onegreendev.com
+                                                📞 +225 07 05 50 97 38 &nbsp;&nbsp;|&nbsp;&nbsp; 📧 contact@songonextension.com
                                             </p>
                                             <p style="color: #666; font-size: 14px; margin: 0;">
                                                 📍 Songon M'Braté, Abidjan - Côte d'Ivoire
