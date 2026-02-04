@@ -177,7 +177,7 @@ export default function ContactPage() {
                 </h3>
                 <div className="space-y-4">
                   <a 
-                    href="mailto:contact@onegreendev.com" 
+                    href="mailto:contact@songonextension.com" 
                     className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group"
                   >
                     <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
@@ -186,7 +186,7 @@ export default function ContactPage() {
                     <div>
                       <span className="text-gray-400 text-xs block">Email</span>
                       <span className="text-white group-hover:text-green-400 transition-colors">
-                        contact@onegreendev.com
+                        contact@songonextension.com
                       </span>
                     </div>
                   </a>
@@ -241,13 +241,13 @@ export default function ContactPage() {
                   Nous développons des projets durables à forte valeur ajoutée.
                 </p>
                 <a 
-                  href="https://onegreendev.com" 
+                  href="https://songonextension.com" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 transition-colors text-sm"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  Visiter onegreendev.com
+                  Visiter songonextension.com
                 </a>
               </div>
 
