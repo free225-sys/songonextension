@@ -26,13 +26,13 @@ export const Footer = () => {
               Projets immobiliers d'exception à Songon M'Braté.
             </p>
             <a 
-              href="https://onegreendev.com" 
+              href="https://songonextension.com" 
               target="_blank" 
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 transition-colors text-sm"
             >
               <ExternalLink className="w-4 h-4" />
-              onegreendev.com
+              songonextension.com
             </a>
           </div>
 
@@ -64,7 +64,7 @@ export const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center gap-3 text-gray-400 text-sm">
                 <Mail className="w-4 h-4 text-green-400" />
-                contact@onegreendev.com
+                contact@songonextension.com
               </li>
               <li className="flex items-center gap-3 text-gray-400 text-sm">
                 <Phone className="w-4 h-4 text-green-400" />
