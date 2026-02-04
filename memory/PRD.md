@@ -1,7 +1,11 @@
 # Songon Extension - PRD (Product Requirements Document)
 
 ## Énoncé du Problème Original
-Développer l'application web Songon Extension (extension de onegreendev.com) intégrant un Masterplan dynamique basé sur un fichier KMZ pour la vente de terrains à Songon M'Braté, Côte d'Ivoire.
+Développer l'application web Songon Extension (anciennement extension de onegreendev.com, maintenant **songonextension.com**) intégrant un Masterplan dynamique basé sur un fichier KMZ pour la vente de terrains à Songon M'Braté, Côte d'Ivoire.
+
+## Domaine Officiel
+**URL** : https://songonextension.com
+**Email** : contact@songonextension.com
 
 ## Choix Utilisateur
 - Authentification: JWT simple (admin/admin via .env)
