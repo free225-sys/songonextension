@@ -847,13 +847,13 @@ export default function HomePage() {
                   Développeur & Aménageur Territorial en Côte d'Ivoire
                 </p>
                 <a 
-                  href="https://onegreendev.com" 
+                  href="https://songonextension.com" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 transition-colors font-montserrat text-sm font-medium"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  Visiter onegreendev.com
+                  Visiter songonextension.com
                 </a>
               </div>
             </div>
