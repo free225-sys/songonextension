@@ -514,15 +514,18 @@ const ParcellesTab = ({ parcelles, onUpdate, onDelete, getAuthHeaders }) => {
                   <td className="p-4 font-montserrat text-gray-300">{formatPrice(parcelle.prix_m2)} FCFA</td>
                   <td className="p-4">
                     <Select
-                      value={parcelle.statut}
+                      value={parcelle.statut || 'disponible'}
                       onValueChange={(value) => handleStatusChange(parcelle, value)}
                     >
-                      <SelectTrigger className={`w-32 border-0 ${
-                        parcelle.statut === 'disponible' ? 'bg-green-500/20 text-green-400' :
-                        parcelle.statut === 'option' ? 'bg-orange-500/20 text-orange-400' :
-                        'bg-red-500/20 text-red-400'
-                      }`}>
-                        <SelectValue />
+                      <SelectTrigger 
+                        className={`w-32 border-0 ${
+                          parcelle.statut === 'disponible' ? 'bg-green-500/20 text-green-400' :
+                          parcelle.statut === 'option' ? 'bg-orange-500/20 text-orange-400' :
+                          'bg-red-500/20 text-red-400'
+                        }`}
+                        data-testid={`status-${parcelle.id}`}
+                      >
+                        <SelectValue placeholder="Statut" />
                       </SelectTrigger>
                       <SelectContent className="bg-[#0d1410] border-white/10">
                         <SelectItem value="disponible" className="text-green-400">Disponible</SelectItem>
