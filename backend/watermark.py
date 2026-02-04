@@ -16,53 +16,63 @@ def create_watermark_pdf(
     access_code: str,
     page_size: tuple = A4
 ) -> io.BytesIO:
-    """Create a watermark PDF page"""
+    """Create a watermark PDF page with diagonal branding"""
     packet = io.BytesIO()
     c = canvas.Canvas(packet, pagesize=page_size)
     width, height = page_size
     
-    # Semi-transparent gray color
-    c.setFillColor(Color(0.5, 0.5, 0.5, alpha=0.15))
-    
-    # Watermark text
-    watermark_text = f"Document préparé pour {client_name}"
-    timestamp = datetime.now().strftime("%d/%m/%Y %H:%M")
-    code_text = f"Code: {access_code} - {timestamp}"
-    
-    # Main diagonal watermark (repeated)
+    # Main diagonal watermark - lighter opacity for readability
     c.saveState()
     c.translate(width / 2, height / 2)
     c.rotate(45)
     
-    # Large main watermark
-    c.setFont("Helvetica-Bold", 40)
-    c.drawCentredString(0, 50, watermark_text)
-    c.setFont("Helvetica", 20)
-    c.drawCentredString(0, 10, code_text)
+    # Primary branding text
+    c.setFillColor(Color(0.3, 0.3, 0.3, alpha=0.08))
+    c.setFont("Helvetica-Bold", 32)
+    watermark_text = f"Préparé pour {client_name}"
+    c.drawCentredString(0, 40, watermark_text)
     
-    c.restoreState()
+    # Security branding
+    c.setFont("Helvetica", 18)
+    c.setFillColor(Color(0.3, 0.3, 0.3, alpha=0.06))
+    c.drawCentredString(0, 0, "Document sécurisé par onegreendev")
     
-    # Additional watermarks in corners
-    c.setFillColor(Color(0.4, 0.4, 0.4, alpha=0.1))
+    # Code and timestamp - smaller
     c.setFont("Helvetica", 12)
+    timestamp = datetime.now().strftime("%d/%m/%Y %H:%M")
+    c.drawCentredString(0, -30, f"Code: {access_code} • {timestamp}")
     
-    # Top-left
-    c.saveState()
-    c.translate(50, height - 30)
-    c.drawString(0, 0, f"Confidentiel - {client_name}")
     c.restoreState()
     
-    # Bottom-right
+    # Repeated diagonal watermarks (background pattern)
+    c.setFillColor(Color(0.4, 0.4, 0.4, alpha=0.04))
+    c.setFont("Helvetica", 10)
+    
+    # Create a pattern of watermarks across the page
+    for y_offset in [-300, -150, 150, 300]:
+        c.saveState()
+        c.translate(width / 2, height / 2 + y_offset)
+        c.rotate(45)
+        c.drawCentredString(0, 0, f"onegreendev • {client_name}")
+        c.restoreState()
+    
+    # Top-left corner mark
+    c.setFillColor(Color(0.4, 0.4, 0.4, alpha=0.06))
+    c.setFont("Helvetica", 9)
     c.saveState()
-    c.translate(width - 200, 20)
-    c.drawString(0, 0, f"Code: {access_code}")
+    c.drawString(20, height - 20, f"Confidentiel - {client_name}")
     c.restoreState()
     
-    # Legal notice at bottom center
-    c.setFillColor(Color(0.3, 0.3, 0.3, alpha=0.2))
-    c.setFont("Helvetica", 8)
-    legal_text = "Ce document est strictement confidentiel - Reproduction interdite"
-    c.drawCentredString(width / 2, 10, legal_text)
+    # Bottom-right corner mark
+    c.saveState()
+    c.drawRightString(width - 20, 15, f"Code: {access_code}")
+    c.restoreState()
+    
+    # Bottom center legal notice
+    c.setFillColor(Color(0.3, 0.3, 0.3, alpha=0.10))
+    c.setFont("Helvetica", 7)
+    legal_text = "Document sécurisé par onegreendev - Reproduction strictement interdite"
+    c.drawCentredString(width / 2, 8, legal_text)
     
     c.save()
     packet.seek(0)
@@ -164,16 +174,17 @@ def create_placeholder_acd_pdf(
         c.drawString(50, y_pos, line)
         y_pos -= 18
     
-    # Watermark overlay
-    c.setFillColor(Color(0.5, 0.5, 0.5, alpha=0.15))
+    # Main diagonal watermark overlay
+    c.setFillColor(Color(0.4, 0.4, 0.4, alpha=0.08))
     c.saveState()
     c.translate(width / 2, height / 2)
     c.rotate(45)
-    c.setFont("Helvetica-Bold", 35)
-    c.drawCentredString(0, 30, f"Document préparé pour")
-    c.drawCentredString(0, -15, client_name)
+    c.setFont("Helvetica-Bold", 28)
+    c.drawCentredString(0, 30, f"Préparé pour {client_name}")
     c.setFont("Helvetica", 16)
-    c.drawCentredString(0, -50, f"Code: {access_code}")
+    c.drawCentredString(0, -5, "Document sécurisé par onegreendev")
+    c.setFont("Helvetica", 11)
+    c.drawCentredString(0, -30, f"Code: {access_code}")
     c.restoreState()
     
     # Footer
@@ -181,7 +192,7 @@ def create_placeholder_acd_pdf(
     c.setFont("Helvetica", 8)
     timestamp = datetime.now().strftime("%d/%m/%Y %H:%M")
     c.drawCentredString(width / 2, 30, f"Document généré le {timestamp} - Code d'accès: {access_code}")
-    c.drawCentredString(width / 2, 18, "Ce document est strictement confidentiel. Reproduction interdite.")
+    c.drawCentredString(width / 2, 18, "Document sécurisé par onegreendev - Reproduction interdite")
     
     c.save()
     packet.seek(0)
@@ -254,16 +265,17 @@ def create_placeholder_plan_pdf(
     c.drawString(60, 130, f"Coordonnées: N 5°20' W 4°17'")
     c.drawString(60, 118, f"Échelle: 1/2000")
     
-    # Watermark
-    c.setFillColor(Color(0.5, 0.5, 0.5, alpha=0.12))
+    # Main diagonal watermark
+    c.setFillColor(Color(0.4, 0.4, 0.4, alpha=0.08))
     c.saveState()
     c.translate(width / 2, height / 2 + 50)
     c.rotate(45)
-    c.setFont("Helvetica-Bold", 30)
-    c.drawCentredString(0, 20, f"Document préparé pour")
-    c.drawCentredString(0, -20, client_name)
+    c.setFont("Helvetica-Bold", 24)
+    c.drawCentredString(0, 25, f"Préparé pour {client_name}")
     c.setFont("Helvetica", 14)
-    c.drawCentredString(0, -50, f"Code: {access_code}")
+    c.drawCentredString(0, -5, "Document sécurisé par onegreendev")
+    c.setFont("Helvetica", 10)
+    c.drawCentredString(0, -25, f"Code: {access_code}")
     c.restoreState()
     
     # Footer
@@ -271,7 +283,7 @@ def create_placeholder_plan_pdf(
     c.setFont("Helvetica", 8)
     timestamp = datetime.now().strftime("%d/%m/%Y %H:%M")
     c.drawCentredString(width / 2, 40, f"Document généré le {timestamp} - Code: {access_code}")
-    c.drawCentredString(width / 2, 28, "Document confidentiel - Reproduction interdite")
+    c.drawCentredString(width / 2, 28, "Document sécurisé par onegreendev - Reproduction interdite")
     
     c.save()
     packet.seek(0)
