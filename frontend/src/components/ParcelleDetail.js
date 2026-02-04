@@ -414,57 +414,32 @@ const DocumentAccessSection = ({ parcelle, t }) => {
                 </div>
               </Button>
 
-              {/* Send Options */}
+              {/* WhatsApp Direct Link */}
               <div className="border-t border-white/10 pt-4 mt-4">
-                <p className="text-gray-400 text-xs mb-3">Ou recevoir par :</p>
+                <p className="text-gray-400 text-xs mb-3">Recevoir les documents via WhatsApp :</p>
                 
-                <div className="flex gap-2 mb-3">
-                  <Button
-                    onClick={() => setSendMethod('email')}
-                    variant={sendMethod === 'email' ? 'default' : 'outline'}
-                    size="sm"
-                    className={sendMethod === 'email' ? 'bg-green-500 text-black' : 'border-white/10'}
-                  >
-                    <Mail className="w-4 h-4 mr-1" />
-                    Email
-                  </Button>
-                  <Button
-                    onClick={() => setSendMethod('whatsapp')}
-                    variant={sendMethod === 'whatsapp' ? 'default' : 'outline'}
-                    size="sm"
-                    className={sendMethod === 'whatsapp' ? 'bg-green-500 text-black' : 'border-white/10'}
-                  >
-                    <MessageCircle className="w-4 h-4 mr-1" />
-                    WhatsApp
-                  </Button>
-                </div>
-
-                {sendMethod && (
-                  <div className="space-y-3 animate-fade-in">
-                    <Input
-                      value={recipient}
-                      onChange={(e) => setRecipient(e.target.value)}
-                      placeholder={sendMethod === 'email' ? 'votre@email.com' : '+225 07 XX XX XX XX'}
-                      className="input-dark"
-                      data-testid="recipient-input"
-                    />
-                    <Button
-                      onClick={handleSendDocument}
-                      disabled={sending || !recipient.trim()}
-                      className="w-full btn-primary"
-                      data-testid="send-doc-btn"
-                    >
-                      {sending ? (
-                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4 mr-2" />
-                          Envoyer le document
-                        </>
-                      )}
-                    </Button>
+                <a
+                  href={`https://wa.me/2250705509738?text=${encodeURIComponent(
+                    `Bonjour, je suis ${clientInfo?.client_name || 'Client'}. Je viens de débloquer l'accès pour la parcelle "${parcelle?.nom || 'N/A'}" (Réf: ${parcelle?.reference_tf || 'N/A'}) sur votre site Songon Extension. Merci de m'envoyer les documents officiels (${selectedDocument?.label || 'ACD/Titre Foncier'}) correspondants.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-3 p-4 bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 hover:border-[#25D366]/50 rounded-xl transition-all group"
+                  data-testid="whatsapp-link"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-white" />
                   </div>
-                )}
+                  <div className="text-left flex-1">
+                    <span className="text-white font-medium block">Demander via WhatsApp</span>
+                    <span className="text-gray-400 text-xs">+225 07 05 50 97 38</span>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-[#25D366] group-hover:translate-x-1 transition-transform" />
+                </a>
+
+                <p className="text-gray-500 text-xs mt-3 text-center">
+                  Un message pré-rempli avec vos informations sera envoyé
+                </p>
               </div>
             </div>
           </div>
