@@ -927,9 +927,10 @@ async def upload_official_document(
 async def delete_official_document(
     parcelle_id: str,
     document_type: str,
+    document_id: str = None,
     username: str = Depends(verify_token)
 ):
-    """Delete an official document from a parcelle"""
+    """Delete an official document from a parcelle. If document_id is provided, delete only that file."""
     data = load_data()
     parcelles = data.get("parcelles", [])
     
@@ -937,22 +938,54 @@ async def delete_official_document(
         if p["id"] == parcelle_id:
             official_docs = p.get("official_documents", {})
             if document_type in official_docs:
-                doc_info = official_docs[document_type]
+                docs = official_docs[document_type]
                 
-                # Delete file
-                try:
-                    filepath = Path(doc_info.get("path", ""))
-                    if filepath.exists():
-                        filepath.unlink()
-                except Exception as e:
-                    logger.warning(f"Could not delete document file: {e}")
+                # Handle both single doc (dict) and multiple docs (list)
+                if isinstance(docs, dict):
+                    docs = [docs]
                 
-                # Remove from data
-                del parcelles[i]["official_documents"][document_type]
+                if document_id:
+                    # Delete specific document by ID
+                    doc_to_delete = None
+                    for doc in docs:
+                        if doc.get("id") == document_id:
+                            doc_to_delete = doc
+                            break
+                    
+                    if not doc_to_delete:
+                        raise HTTPException(status_code=404, detail="Document non trouvé")
+                    
+                    # Delete file
+                    try:
+                        filepath = Path(doc_to_delete.get("path", ""))
+                        if filepath.exists():
+                            filepath.unlink()
+                    except Exception as e:
+                        logger.warning(f"Could not delete document file: {e}")
+                    
+                    # Remove from list
+                    docs = [d for d in docs if d.get("id") != document_id]
+                    
+                    if len(docs) == 0:
+                        del parcelles[i]["official_documents"][document_type]
+                    else:
+                        parcelles[i]["official_documents"][document_type] = docs
+                else:
+                    # Delete all documents of this type
+                    for doc in docs:
+                        try:
+                            filepath = Path(doc.get("path", ""))
+                            if filepath.exists():
+                                filepath.unlink()
+                        except Exception as e:
+                            logger.warning(f"Could not delete document file: {e}")
+                    
+                    del parcelles[i]["official_documents"][document_type]
+                
                 data["parcelles"] = parcelles
                 save_data(data)
                 
-                return {"success": True, "deleted": document_type}
+                return {"success": True, "deleted": document_type, "document_id": document_id}
             else:
                 raise HTTPException(status_code=404, detail="Document non trouvé")
     
