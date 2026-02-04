@@ -860,20 +860,31 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
                   <label className="text-gray-400 text-sm mb-2 block font-montserrat">Prix/m² (FCFA)</label>
                   <Input
                     type="number"
-                    value={formData.prix_m2}
-                    onChange={(e) => handleChange('prix_m2', parseFloat(e.target.value))}
+                    step="100"
+                    value={formData.prix_m2 || ''}
+                    onChange={(e) => handleChange('prix_m2', parseFloat(e.target.value) || 0)}
                     className="bg-white/5 border-white/10 text-white"
+                    data-testid="edit-prix-m2"
                   />
                 </div>
                 <div>
                   <label className="text-gray-400 text-sm mb-2 block font-montserrat">Valeur globale (FCFA)</label>
                   <Input
                     type="number"
-                    value={formData.valeur_globale}
-                    onChange={(e) => handleChange('valeur_globale', parseFloat(e.target.value))}
+                    step="1000"
+                    value={formData.valeur_globale || ''}
+                    onChange={(e) => handleChange('valeur_globale', parseFloat(e.target.value) || 0)}
                     className="bg-white/5 border-white/10 text-white"
+                    data-testid="edit-valeur-globale"
                   />
                 </div>
+              </div>
+              
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                <p className="text-amber-400 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  Les prix sont en FCFA. La valeur globale devrait correspondre à (superficie × 10000 × prix/m²).
+                </p>
               </div>
             </TabsContent>
 
