@@ -874,79 +874,86 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 mb-4">
                 <p className="text-amber-400 text-sm flex items-center gap-2">
                   <FileText className="w-4 h-4" />
-                  <span>Uploadez les documents officiels (PDF uniquement). Un filigrane sera automatiquement ajouté lors de la consultation par les clients.</span>
+                  <span>Uploadez les documents officiels (PDF uniquement). Vous pouvez ajouter plusieurs fichiers par type. Un filigrane sera automatiquement ajouté lors de la consultation.</span>
                 </p>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {documentTypes.map((docType) => {
-                  const uploadedDoc = officialDocs[docType.key];
+                  const uploadedDocs = officialDocs[docType.key];
+                  // Handle both single doc (dict) and multiple docs (list)
+                  const docList = Array.isArray(uploadedDocs) ? uploadedDocs : (uploadedDocs ? [uploadedDocs] : []);
+                  const hasDoc = docList.length > 0;
                   
                   return (
                     <div 
                       key={docType.key} 
                       className={`p-4 rounded-xl border transition-colors ${
-                        uploadedDoc 
+                        hasDoc 
                           ? 'bg-green-500/10 border-green-500/30' 
                           : 'bg-white/5 border-white/10'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                            uploadedDoc ? 'bg-green-500/20' : 'bg-white/10'
+                            hasDoc ? 'bg-green-500/20' : 'bg-white/10'
                           }`}>
-                            <docType.icon className={`w-5 h-5 ${uploadedDoc ? 'text-green-400' : 'text-gray-500'}`} />
+                            <docType.icon className={`w-5 h-5 ${hasDoc ? 'text-green-400' : 'text-gray-500'}`} />
                           </div>
                           <div>
                             <p className="text-white text-sm font-medium">{docType.label}</p>
-                            {uploadedDoc ? (
-                              <p className="text-green-400 text-xs flex items-center gap-1">
-                                <CheckCircle className="w-3 h-3" />
-                                {uploadedDoc.original_name || uploadedDoc.filename}
-                              </p>
-                            ) : (
-                              <p className="text-gray-500 text-xs">Aucun document uploadé</p>
-                            )}
+                            <p className={`text-xs ${hasDoc ? 'text-green-400' : 'text-gray-500'}`}>
+                              {hasDoc ? `${docList.length} fichier(s) uploadé(s)` : 'Aucun document uploadé'}
+                            </p>
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-2">
-                          {uploadedDoc && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDeleteDocument(docType.key)}
-                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                        <label className={`cursor-pointer px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          'bg-green-500 text-black hover:bg-green-400'
+                        }`}>
+                          <input 
+                            type="file" 
+                            accept=".pdf" 
+                            className="hidden" 
+                            onChange={(e) => handleDocumentUpload(e, docType.key)} 
+                            disabled={uploadingDoc}
+                          />
+                          {uploadingDoc ? (
+                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <span className="flex items-center gap-1">
+                              <Plus className="w-4 h-4" />
+                              Ajouter
+                            </span>
                           )}
-                          <label className={`cursor-pointer px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            uploadedDoc 
-                              ? 'bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white' 
-                              : 'bg-green-500 text-black hover:bg-green-400'
-                          }`}>
-                            <input 
-                              type="file" 
-                              accept=".pdf" 
-                              className="hidden" 
-                              onChange={(e) => handleDocumentUpload(e, docType.key)} 
-                              disabled={uploadingDoc}
-                            />
-                            {uploadingDoc ? (
-                              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                            ) : uploadedDoc ? (
-                              'Remplacer'
-                            ) : (
-                              <span className="flex items-center gap-1">
-                                <Upload className="w-4 h-4" />
-                                Uploader
-                              </span>
-                            )}
-                          </label>
-                        </div>
+                        </label>
                       </div>
+                      
+                      {/* List of uploaded files */}
+                      {docList.length > 0 && (
+                        <div className="space-y-2 mt-3 pt-3 border-t border-white/10">
+                          {docList.map((doc, idx) => (
+                            <div key={doc.id || idx} className="flex items-center justify-between py-2 px-3 bg-black/20 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <FileText className="w-4 h-4 text-green-400" />
+                                <span className="text-gray-300 text-sm truncate max-w-[200px]">
+                                  {doc.original_name || doc.filename}
+                                </span>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteDocument(docType.key, doc.id)}
+                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 w-7 p-0"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
