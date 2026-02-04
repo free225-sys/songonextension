@@ -72,16 +72,15 @@ Tunnel d'accès:
 ## Backlog Prioritaire
 
 ### P0 (Critique)
-- (Terminé)
+- ✅ Intégration Resend pour envoi automatique d'emails
 
 ### P1 (Important)
-- Intégration vraie email (SendGrid/Resend) pour envoi automatique
-- Intégration WhatsApp Business API
+- Support pour plusieurs documents par parcelle
 - Vrais documents PDF uploadés (remplacer placeholders)
 
 ### P2 (Nice to have)
 - QR Code sur documents pour vérification
-- Système de demande d'accès public
+- Migration vers MongoDB/PostgreSQL
 - Notifications push admin
 
 ## Credentials Test
