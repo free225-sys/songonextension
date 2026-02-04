@@ -4,11 +4,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field, EmailStr
 import os
 import json
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field
 from typing import List, Optional
 import uuid
 import secrets
@@ -21,6 +21,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 from io import BytesIO
 from watermark import create_placeholder_acd_pdf, create_placeholder_plan_pdf, add_watermark_to_pdf
+from email_service import send_document_email
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
