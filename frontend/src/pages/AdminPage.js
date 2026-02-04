@@ -1485,6 +1485,8 @@ export default function AdminPage() {
   const [parcelles, setParcelles] = useState([]);
   const [stats, setStats] = useState({ total: 0, disponible: 0, option: 0, vendu: 0 });
   const [loading, setLoading] = useState(true);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [lastCheckTime, setLastCheckTime] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -1506,11 +1508,35 @@ export default function AdminPage() {
     setLoading(false);
   }, []);
 
+  // Fetch notifications
+  const fetchNotifications = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const params = lastCheckTime ? `?since=${lastCheckTime}` : '';
+      const response = await axios.get(`${API}/admin/notifications${params}`, { headers: getAuthHeaders() });
+      if (response.data.new_count > 0 && activeTab !== 'logs') {
+        setNotificationCount(response.data.new_count);
+      }
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    }
+  }, [isAuthenticated, getAuthHeaders, lastCheckTime, activeTab]);
+
+  // Clear notifications when viewing logs
+  const handleNotificationRead = useCallback(() => {
+    setNotificationCount(0);
+    setLastCheckTime(new Date().toISOString());
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchData();
+      fetchNotifications();
+      // Poll for notifications every 30 seconds
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
     }
-  }, [isAuthenticated, fetchData]);
+  }, [isAuthenticated, fetchData, fetchNotifications]);
 
   if (authLoading || !isAuthenticated) {
     return (
@@ -1522,14 +1548,14 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#050a07] via-[#071210] to-[#050a07] flex" data-testid="admin-page">
-      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} notificationCount={notificationCount} />
       
       <main className="flex-1 p-6 lg:p-8 overflow-auto">
         <AnimatePresence mode="wait">
           {activeTab === 'dashboard' && <DashboardTab key="dashboard" stats={stats} parcelles={parcelles} />}
           {activeTab === 'parcelles' && <ParcellesTab key="parcelles" parcelles={parcelles} onUpdate={fetchData} onDelete={fetchData} getAuthHeaders={getAuthHeaders} />}
           {activeTab === 'access' && <AccessCodesTab key="access" getAuthHeaders={getAuthHeaders} parcelles={parcelles} />}
-          {activeTab === 'logs' && <DownloadLogsTab key="logs" getAuthHeaders={getAuthHeaders} />}
+          {activeTab === 'logs' && <DownloadLogsTab key="logs" getAuthHeaders={getAuthHeaders} onNotificationRead={handleNotificationRead} />}
           {activeTab === 'kmz' && <KMZTab key="kmz" onImport={fetchData} getAuthHeaders={getAuthHeaders} />}
         </AnimatePresence>
       </main>
