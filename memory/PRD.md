@@ -42,6 +42,17 @@ Tunnel d'accès:
 
 ## Ce qui a été implémenté
 
+### Version 1.8.0 - Correction Formulaires Admin (04/02/2026)
+- **Correction z-index Select**: Les dropdowns des composants Select s'affichent maintenant correctement au-dessus des Dialog (z-[1200])
+- **Valeurs par défaut formulaire**: Ajout de valeurs par défaut pour éviter les erreurs undefined
+- **Amélioration UX formulaire**:
+  - Labels plus explicites ("Type de parcelle", "Superficie (ha)")
+  - Placeholders dans les Select
+  - Message d'aide dans l'onglet Prix
+  - Nouvelles options (Commercial, Mixte pour configuration)
+- **Data-testid ajoutés**: Meilleure testabilité des formulaires
+- **Changement de domaine**: Migration de onegreendev.com vers songonextension.com
+
 ### Version 1.7.0 - Phase Finale Sécurisation (04/02/2026)
 - **Filigrane amélioré**: Nouveau format "Préparé pour [Client] | Document sécurisé par onegreendev" en diagonale avec opacité légère
 - **Notifications Admin temps réel**: Badge rouge animé sur l'onglet Journal dans la sidebar
