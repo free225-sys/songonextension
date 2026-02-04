@@ -106,6 +106,14 @@
           "path": "/app/backend/documents/tf-223737/titre_foncier_0475198e.pdf",
           "uploaded_at": "2026-02-03T17:37:56.135697+00:00",
           "uploaded_by": "admin"
+        },
+        "acd": {
+          "type": "acd",
+          "filename": "acd_b25aa13f.pdf",
+          "original_name": "exemple_ACD.pdf",
+          "path": "/app/backend/documents/tf-223737/acd_b25aa13f.pdf",
+          "uploaded_at": "2026-02-03T18:38:49.465218+00:00",
+          "uploaded_by": "admin"
         }
       }
     },
@@ -1192,6 +1200,36 @@
       "document_type": "acd",
       "document_name": "acd_tf-223737",
       "timestamp": "2026-02-03T17:48:57.319126+00:00",
+      "ip_address": "N/A"
+    },
+    {
+      "id": "1dd29ffe-14f7-4bc0-82a5-7b29a14796cc",
+      "code": "GX6R3HGX",
+      "client_name": "Jean Test",
+      "parcelle_id": "tf-223737",
+      "document_type": "titre_foncier",
+      "document_name": "titre_foncier_tf-223737",
+      "timestamp": "2026-02-03T18:06:47.384245+00:00",
+      "ip_address": "N/A"
+    },
+    {
+      "id": "f2cb4b99-7521-46d9-bf32-07ddcacc3883",
+      "code": "GX6R3HGX",
+      "client_name": "Jean Test",
+      "parcelle_id": "tf-223737",
+      "document_type": "acd",
+      "document_name": "acd_tf-223737",
+      "timestamp": "2026-02-03T18:39:00.662503+00:00",
+      "ip_address": "N/A"
+    },
+    {
+      "id": "fd6fc139-1e0b-4dd1-be69-3138b9163491",
+      "code": "4TBAPCXY",
+      "client_name": "Test Client",
+      "parcelle_id": "tf-223737",
+      "document_type": "acd",
+      "document_name": "acd_tf-223737",
+      "timestamp": "2026-02-03T18:39:47.069710+00:00",
       "ip_address": "N/A"
     }
   ]
