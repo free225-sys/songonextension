@@ -1239,7 +1239,9 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
             <div>
               <label className="text-gray-400 text-sm mb-2 block font-montserrat">Durée de validité</label>
               <Select value={String(newCode.expires_hours)} onValueChange={(v) => setNewCode({ ...newCode, expires_hours: parseInt(v) })}>
-                <SelectTrigger className="bg-white/5 border-white/10"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="bg-white/5 border-white/10 text-white" data-testid="duration-select">
+                  <SelectValue placeholder="Sélectionner la durée" />
+                </SelectTrigger>
                 <SelectContent className="bg-[#0d1410] border-white/10">
                   <SelectItem value="24">24 heures</SelectItem>
                   <SelectItem value="72">72 heures (3 jours)</SelectItem>
