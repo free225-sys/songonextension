@@ -86,6 +86,9 @@ const DocumentAccessSection = ({ parcelle, t }) => {
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [availableDocuments, setAvailableDocuments] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [emailAddress, setEmailAddress] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   // Fetch available documents for this parcelle
   React.useEffect(() => {
@@ -134,6 +137,8 @@ const DocumentAccessSection = ({ parcelle, t }) => {
   const handleDocumentAccess = (docType, docLabel) => {
     setSelectedDocument({ type: docType, label: docLabel });
     setShowOptionsDialog(true);
+    setShowEmailForm(false);
+    setEmailAddress('');
   };
 
   const handlePreview = async () => {
@@ -170,6 +175,37 @@ const DocumentAccessSection = ({ parcelle, t }) => {
     } catch (error) {
       toast.error('Erreur lors du téléchargement');
     }
+  };
+
+  const handleSendEmail = async () => {
+    if (!emailAddress.trim() || !emailAddress.includes('@')) {
+      toast.error('Veuillez entrer une adresse email valide');
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const formData = new FormData();
+      formData.append('parcelle_id', parcelle.id);
+      formData.append('document_type', selectedDocument.type);
+      formData.append('code', accessCode);
+      formData.append('send_method', 'email');
+      formData.append('recipient', emailAddress);
+
+      const response = await axios.post(`${API}/documents/send`, formData);
+      
+      if (response.data.success) {
+        toast.success('Email envoyé !', {
+          description: `Document envoyé à ${emailAddress}`
+        });
+        setShowEmailForm(false);
+        setEmailAddress('');
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.detail || 'Erreur lors de l\'envoi';
+      toast.error(errorMsg);
+    }
+    setSendingEmail(false);
   };
 
   // Get icon based on document type
