@@ -1198,34 +1198,49 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
   );
 };
 
-// Download Logs Tab
-const DownloadLogsTab = ({ getAuthHeaders }) => {
+// Download Logs Tab - Enhanced with Real-time Journal
+const DownloadLogsTab = ({ getAuthHeaders, onNotificationRead }) => {
   const [logs, setLogs] = useState([]);
+  const [realtimeLogs, setRealtimeLogs] = useState([]);
   const [stats, setStats] = useState({ total_downloads: 0, by_client: {}, by_parcelle: {} });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [logsRes, statsRes] = await Promise.all([
-          axios.get(`${API}/admin/download-logs`, { headers: getAuthHeaders() }),
-          axios.get(`${API}/admin/download-logs/stats`, { headers: getAuthHeaders() })
-        ]);
-        setLogs(logsRes.data.logs || []);
-        setStats(statsRes.data);
-      } catch (error) {
-        console.error('Failed to fetch logs:', error);
-      }
-      setLoading(false);
-    };
+  const fetchData = useCallback(async () => {
+    try {
+      const [logsRes, statsRes, realtimeRes] = await Promise.all([
+        axios.get(`${API}/admin/download-logs`, { headers: getAuthHeaders() }),
+        axios.get(`${API}/admin/download-logs/stats`, { headers: getAuthHeaders() }),
+        axios.get(`${API}/admin/access-logs/realtime?limit=20`, { headers: getAuthHeaders() })
+      ]);
+      setLogs(logsRes.data.logs || []);
+      setStats(statsRes.data);
+      setRealtimeLogs(realtimeRes.data.logs || []);
+      // Clear notification count when viewing logs
+      if (onNotificationRead) onNotificationRead();
+    } catch (error) {
+      console.error('Failed to fetch logs:', error);
+    }
+    setLoading(false);
+  }, [getAuthHeaders, onNotificationRead]);
+
+  useEffect(() => { 
     fetchData();
-  }, []);
+    // Poll for new logs every 30 seconds
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-        <h1 className="font-playfair text-3xl font-bold text-white mb-2">Journal des téléchargements</h1>
-        <p className="font-montserrat text-gray-400">Traçabilité des accès aux documents</p>
+        <h1 className="font-playfair text-3xl font-bold text-white mb-2 flex items-center gap-3">
+          Journal d'accès
+          <span className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+          </span>
+        </h1>
+        <p className="font-montserrat text-gray-400">Traçabilité en temps réel des accès aux documents</p>
       </motion.div>
 
       {/* Stats */}
@@ -1235,8 +1250,95 @@ const DownloadLogsTab = ({ getAuthHeaders }) => {
         <ModernStatCard icon={Map} label="Parcelles consultées" value={Object.keys(stats.by_parcelle || {}).length} color="bg-gradient-to-br from-purple-500 to-purple-600" />
       </div>
 
-      {/* Logs Table */}
+      {/* Real-time Activity Feed */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        className="rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 overflow-hidden"
+      >
+        <div className="p-4 border-b border-white/10 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+              <Bell className="w-5 h-5 text-green-400" />
+            </div>
+            <div>
+              <h3 className="font-playfair text-lg font-bold text-white">Activité récente</h3>
+              <p className="text-gray-500 text-xs font-montserrat">Derniers accès aux documents</p>
+            </div>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={fetchData}
+            className="text-gray-400 hover:text-white"
+          >
+            <Clock className="w-4 h-4 mr-2" />
+            Actualiser
+          </Button>
+        </div>
+        
+        <div className="divide-y divide-white/5 max-h-96 overflow-y-auto">
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">
+              <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              Chargement...
+            </div>
+          ) : realtimeLogs.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Eye className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              Aucun accès enregistré pour le moment
+            </div>
+          ) : (
+            realtimeLogs.map((log, index) => (
+              <motion.div
+                key={log.id || index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.03 }}
+                className="p-4 hover:bg-white/5 transition-colors flex items-center gap-4"
+              >
+                {/* Activity indicator */}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  log.document_type?.includes('email') ? 'bg-blue-500/20' : 
+                  log.document_type?.includes('whatsapp') ? 'bg-green-600/20' : 'bg-purple-500/20'
+                }`}>
+                  {log.document_type?.includes('email') ? (
+                    <FileText className="w-5 h-5 text-blue-400" />
+                  ) : log.document_type?.includes('whatsapp') ? (
+                    <FileText className="w-5 h-5 text-green-400" />
+                  ) : (
+                    <Download className="w-5 h-5 text-purple-400" />
+                  )}
+                </div>
+                
+                {/* Log details */}
+                <div className="flex-1">
+                  <p className="text-white font-medium font-montserrat">
+                    <span className="text-green-400">{log.client_name}</span>
+                    {' '}a consulté{' '}
+                    <span className="text-purple-400">{log.document_type?.replace('_sent_via_email', ' (envoi email)').replace('_sent_via_whatsapp', ' (envoi WhatsApp)').toUpperCase()}</span>
+                  </p>
+                  <p className="text-gray-500 text-sm">
+                    Parcelle: <span className="text-gray-400">{log.parcelle_nom || log.parcelle_id}</span>
+                  </p>
+                </div>
+                
+                {/* Time */}
+                <div className="text-right">
+                  <p className="text-green-400 text-sm font-medium">{log.relative_time || 'Récent'}</p>
+                  <p className="text-gray-600 text-xs">Code: {log.code}</p>
+                </div>
+              </motion.div>
+            ))
+          )}
+        </div>
+      </motion.div>
+
+      {/* Full Logs Table */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 overflow-hidden">
+        <div className="p-4 border-b border-white/10">
+          <h3 className="font-playfair text-lg font-bold text-white">Historique complet</h3>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -1249,9 +1351,7 @@ const DownloadLogsTab = ({ getAuthHeaders }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {loading ? (
-                <tr><td colSpan={5} className="text-center py-8 text-gray-500">Chargement...</td></tr>
-              ) : logs.length === 0 ? (
+              {logs.length === 0 ? (
                 <tr><td colSpan={5} className="text-center py-8 text-gray-500"><FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />Aucun téléchargement enregistré</td></tr>
               ) : (
                 logs.map((log) => (
