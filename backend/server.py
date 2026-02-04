@@ -547,7 +547,7 @@ async def get_document_with_watermark(
             else:
                 raise HTTPException(status_code=404, detail="Fichier document non trouvé")
         else:
-            raise HTTPException(status_code=404, detail="Fichier document non trouvé")
+            raise HTTPException(status_code=404, detail="Document non trouvé")
     else:
         # Generate placeholder PDF with watermark
         if document_type == "acd":
