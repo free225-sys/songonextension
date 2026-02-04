@@ -84,9 +84,6 @@ const DocumentAccessSection = ({ parcelle, t }) => {
   const [verifying, setVerifying] = useState(false);
   const [showOptionsDialog, setShowOptionsDialog] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
-  const [sendMethod, setSendMethod] = useState(null);
-  const [recipient, setRecipient] = useState('');
-  const [sending, setSending] = useState(false);
   const [availableDocuments, setAvailableDocuments] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
 
@@ -137,8 +134,6 @@ const DocumentAccessSection = ({ parcelle, t }) => {
   const handleDocumentAccess = (docType, docLabel) => {
     setSelectedDocument({ type: docType, label: docLabel });
     setShowOptionsDialog(true);
-    setSendMethod(null);
-    setRecipient('');
   };
 
   const handlePreview = async () => {
@@ -175,37 +170,6 @@ const DocumentAccessSection = ({ parcelle, t }) => {
     } catch (error) {
       toast.error('Erreur lors du téléchargement');
     }
-  };
-
-  const handleSendDocument = async () => {
-    if (!sendMethod || !recipient.trim()) {
-      toast.error('Veuillez remplir tous les champs');
-      return;
-    }
-
-    setSending(true);
-    try {
-      const formData = new FormData();
-      formData.append('parcelle_id', parcelle.id);
-      formData.append('document_type', selectedDocument.type);
-      formData.append('code', accessCode);
-      formData.append('send_method', sendMethod);
-      formData.append('recipient', recipient);
-
-      const response = await axios.post(`${API}/documents/send`, formData);
-      
-      if (sendMethod === 'whatsapp' && response.data.whatsapp_url) {
-        window.open(response.data.whatsapp_url, '_blank');
-      }
-      
-      toast.success(response.data.message);
-      setShowOptionsDialog(false);
-      setSendMethod(null);
-      setRecipient('');
-    } catch (error) {
-      toast.error('Erreur lors de l\'envoi');
-    }
-    setSending(false);
   };
 
   // Get icon based on document type
