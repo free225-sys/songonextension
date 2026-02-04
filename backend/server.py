@@ -1187,6 +1187,99 @@ async def get_download_stats(username: str = Depends(verify_token)):
         "by_parcelle": by_parcelle
     }
 
+@api_router.get("/admin/notifications")
+async def get_notifications(
+    since: str = None,
+    username: str = Depends(verify_token)
+):
+    """Get recent document access notifications for admin dashboard"""
+    data = load_data()
+    logs = data.get("download_logs", [])
+    
+    # Sort by timestamp descending
+    logs.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    
+    # Filter by timestamp if provided
+    if since:
+        try:
+            since_dt = datetime.fromisoformat(since.replace('Z', '+00:00'))
+            logs = [l for l in logs if datetime.fromisoformat(l.get("timestamp", "").replace('Z', '+00:00')) > since_dt]
+        except:
+            pass
+    
+    # Get recent notifications (last 50)
+    recent_logs = logs[:50]
+    
+    # Count new notifications (last 24 hours)
+    now = datetime.now(timezone.utc)
+    last_24h = now - timedelta(hours=24)
+    new_count = 0
+    
+    for log in logs:
+        try:
+            log_time = datetime.fromisoformat(log.get("timestamp", "").replace('Z', '+00:00'))
+            if log_time > last_24h:
+                new_count += 1
+        except:
+            pass
+    
+    return {
+        "notifications": recent_logs,
+        "new_count": new_count,
+        "has_new": new_count > 0,
+        "last_check": now.isoformat()
+    }
+
+@api_router.get("/admin/access-logs/realtime")
+async def get_realtime_access_logs(
+    limit: int = 20,
+    username: str = Depends(verify_token)
+):
+    """Get real-time access logs for the Journal d'accès"""
+    data = load_data()
+    logs = data.get("download_logs", [])
+    parcelles = {p["id"]: p for p in data.get("parcelles", [])}
+    
+    # Sort by timestamp descending
+    logs.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    
+    # Enrich logs with parcelle names
+    enriched_logs = []
+    for log in logs[:limit]:
+        parcelle = parcelles.get(log.get("parcelle_id"), {})
+        enriched_log = {
+            **log,
+            "parcelle_nom": parcelle.get("nom", log.get("parcelle_id")),
+            "relative_time": get_relative_time(log.get("timestamp"))
+        }
+        enriched_logs.append(enriched_log)
+    
+    return {
+        "logs": enriched_logs,
+        "total": len(logs)
+    }
+
+def get_relative_time(timestamp_str: str) -> str:
+    """Convert timestamp to relative time string"""
+    try:
+        ts = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+        now = datetime.now(timezone.utc)
+        diff = now - ts
+        
+        if diff.total_seconds() < 60:
+            return "À l'instant"
+        elif diff.total_seconds() < 3600:
+            mins = int(diff.total_seconds() / 60)
+            return f"Il y a {mins} min"
+        elif diff.total_seconds() < 86400:
+            hours = int(diff.total_seconds() / 3600)
+            return f"Il y a {hours}h"
+        else:
+            days = int(diff.total_seconds() / 86400)
+            return f"Il y a {days}j"
+    except:
+        return ""
+
 # Include the router in the main app
 app.include_router(api_router)
 
