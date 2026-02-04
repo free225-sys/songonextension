@@ -623,26 +623,34 @@ async def send_document(
         official_docs = parcelle.get("official_documents", {})
         
         if document_type in official_docs:
-            # Use real uploaded document with watermark
-            doc_info = official_docs[document_type]
-            doc_path = Path(doc_info.get("path", ""))
-            
-            if doc_path.exists():
-                with open(doc_path, 'rb') as f:
-                    original_pdf = f.read()
-                try:
-                    pdf_content = add_watermark_to_pdf(original_pdf, client_name, code)
-                except Exception as e:
-                    logger.error(f"Error adding watermark: {e}")
-                    # Fallback to placeholder
-                    pdf_content = create_placeholder_acd_pdf(
-                        parcelle_nom=parcelle.get("nom", "Parcelle"),
-                        parcelle_ref=parcelle.get("reference_tf", "N/A"),
-                        client_name=client_name,
-                        access_code=code
-                    )
+            # Handle both single doc (dict) and multiple docs (list)
+            doc_data = official_docs[document_type]
+            if isinstance(doc_data, list):
+                doc_info = doc_data[0] if doc_data else None
             else:
-                raise HTTPException(status_code=404, detail="Fichier document non trouvé")
+                doc_info = doc_data
+            
+            if doc_info:
+                doc_path = Path(doc_info.get("path", ""))
+                
+                if doc_path.exists():
+                    with open(doc_path, 'rb') as f:
+                        original_pdf = f.read()
+                    try:
+                        pdf_content = add_watermark_to_pdf(original_pdf, client_name, code)
+                    except Exception as e:
+                        logger.error(f"Error adding watermark: {e}")
+                        # Fallback to placeholder
+                        pdf_content = create_placeholder_acd_pdf(
+                            parcelle_nom=parcelle.get("nom", "Parcelle"),
+                            parcelle_ref=parcelle.get("reference_tf", "N/A"),
+                            client_name=client_name,
+                            access_code=code
+                        )
+                else:
+                    raise HTTPException(status_code=404, detail="Fichier document non trouvé")
+            else:
+                raise HTTPException(status_code=404, detail="Document non trouvé")
         else:
             # Generate placeholder PDF with watermark
             if document_type == "acd":
