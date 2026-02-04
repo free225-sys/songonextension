@@ -88,11 +88,15 @@ Tunnel d'accès:
 - ✅ Notifications Admin temps réel
 - ✅ Multi-documents par parcelle
 
+### P1 (Important)
+- Vérifier un domaine personnalisé sur Resend pour envoyer à tous les destinataires
+
 ### P2 (Nice to have)
 - QR Code sur documents pour vérification
 - Migration vers MongoDB/PostgreSQL
-- Notifications push admin
+- Notifications push navigateur
 
 ## Credentials Test
 - **Admin**: `admin` / `admin`
 - **Code test**: Générer via Dashboard Admin → Codes d'accès
+- **Email Resend**: Configuré mais limité à l'email du compte en mode test
