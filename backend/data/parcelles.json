@@ -1241,6 +1241,16 @@
       "document_name": "titre_foncier_tf-223737_to_+2250747732557",
       "timestamp": "2026-02-04T01:07:39.551158+00:00",
       "ip_address": "N/A"
+    },
+    {
+      "id": "9aeac2a5-a413-4f8b-aa03-b9e78860b769",
+      "code": "J7E7CN4J",
+      "client_name": "Test Client",
+      "parcelle_id": "tf-223737",
+      "document_type": "acd_sent_via_email",
+      "document_name": "acd_tf-223737_to_test@example.com",
+      "timestamp": "2026-02-04T01:33:59.696948+00:00",
+      "ip_address": "N/A"
     }
   ]
 }
