@@ -64,10 +64,6 @@ const ParcellePolygon = ({ parcelle, onClick, isSelected }) => {
     vendu: t('status_vendu'),
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('fr-FR').format(price);
-  };
-
   return (
     <Polygon
       positions={positions}
