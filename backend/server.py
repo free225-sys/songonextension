@@ -314,6 +314,34 @@ def parse_kml_file(kml_content: str) -> List[dict]:
 async def root():
     return {"message": "Songon Extension API", "version": "1.1.0"}
 
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint for deployment monitoring"""
+    try:
+        # Check data file accessibility
+        data = load_data()
+        parcelles_count = len(data.get("parcelles", []))
+        
+        return {
+            "status": "healthy",
+            "version": "1.8.0",
+            "service": "Songon Extension API",
+            "checks": {
+                "data_store": "ok",
+                "parcelles_loaded": parcelles_count,
+                "email_configured": bool(os.environ.get("RESEND_API_KEY")),
+                "auth_configured": bool(JWT_SECRET)
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
 @api_router.get("/parcelles")
 async def get_parcelles():
     """Get all parcelles (public)"""
