@@ -101,21 +101,13 @@ const ParcellePolygon = ({ parcelle, onClick, isSelected }) => {
       }}
     >
       <Tooltip sticky className="custom-tooltip">
-        <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden min-w-[260px]">
+        <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden min-w-[240px]">
           {/* Header */}
           <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-4 py-3">
-            <div className="font-playfair text-white font-semibold text-base">{parcelle.nom}</div>
-            <div className="font-montserrat text-gray-300 text-xs mt-0.5">{parcelle.type_projet}</div>
-          </div>
-          
-          {/* Content */}
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between">
               <div>
-                <span className="font-montserrat text-gray-500 text-xs block">Prix au m²</span>
-                <span className="font-playfair text-xl font-bold text-gray-900">
-                  {formatPrice(parcelle.prix_m2)} <span className="text-sm text-gray-500">FCFA</span>
-                </span>
+                <div className="font-playfair text-white font-semibold text-base">{parcelle.nom}</div>
+                <div className="font-montserrat text-gray-300 text-xs mt-0.5">{parcelle.type_projet}</div>
               </div>
               <span className={`
                 px-3 py-1.5 rounded-full text-xs font-bold font-montserrat
@@ -124,8 +116,11 @@ const ParcellePolygon = ({ parcelle, onClick, isSelected }) => {
                 {statusLabels[parcelle.statut]}
               </span>
             </div>
-            
-            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+          </div>
+          
+          {/* Content */}
+          <div className="p-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <span className="font-montserrat text-gray-500 text-xs block">Superficie</span>
                 <span className="font-montserrat text-gray-800 font-semibold text-sm">
