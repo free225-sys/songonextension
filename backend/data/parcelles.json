@@ -1109,6 +1109,21 @@
       "created_by": "admin",
       "active": true,
       "usage_count": 0
+    },
+    {
+      "id": "37baa9e2-6f5c-48c2-87a0-e0501eeaf686",
+      "code": "9HCYKC4K",
+      "client_name": "Jean Prospect",
+      "client_email": "jean@test.com",
+      "parcelle_ids": [],
+      "expires_at": "2026-02-11T12:35:24.719210+00:00",
+      "created_at": "2026-02-08T12:35:24.719237+00:00",
+      "created_by": "admin",
+      "active": true,
+      "usage_count": 0,
+      "profile_type": "PROSPECT",
+      "video_url": null,
+      "camera_enabled": false
     }
   ],
   "download_logs": [
