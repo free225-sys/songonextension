@@ -29,7 +29,8 @@ import {
   Key, FileText, Clock, Copy, Download, Users, 
   Eye, EyeOff, FileSpreadsheet, File, TrendingUp,
   CheckCircle, AlertCircle, Calendar, DollarSign,
-  ArrowUpRight, ArrowDownRight, MoreHorizontal, Bell, Video, Check
+  ArrowUpRight, ArrowDownRight, MoreHorizontal, Bell, Video, Check,
+  Phone, MessageCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
