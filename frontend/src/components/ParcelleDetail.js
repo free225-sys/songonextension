@@ -609,13 +609,13 @@ const DocumentAccessSection = ({ parcelle, t }) => {
                   <>
                     <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                     <div>
-                  <p className="text-amber-400 text-sm font-medium mb-1">Avertissement légal</p>
-                  <p className="text-gray-400 text-xs leading-relaxed">
-                    Ce document est <strong className="text-white">strictement confidentiel</strong>. 
-                    Un filigrane numérique sera appliqué avec votre identifiant pour traçabilité. 
-                    Toute diffusion non autorisée est interdite.
-                  </p>
-                </div>
+                      <p className="text-amber-400 text-sm font-medium font-montserrat">Document sécurisé</p>
+                      <p className="text-gray-400 text-xs mt-1 font-montserrat">
+                        Ce document sera marqué d'un <strong className="text-white">filigrane de sécurité</strong> avec votre identifiant pour traçabilité.
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
