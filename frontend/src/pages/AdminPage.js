@@ -1373,6 +1373,67 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
               </div>
             )}
 
+            {/* Propriétaire-specific: Parcelle selection */}
+            {newCode.profile_type === 'PROPRIETAIRE' && (
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4 space-y-3">
+                <div>
+                  <label className="text-amber-400 text-sm font-montserrat font-medium flex items-center gap-2">
+                    <Map className="w-4 h-4" />
+                    Parcelles associées *
+                  </label>
+                  <p className="text-gray-500 text-xs mb-3">Sélectionnez une ou plusieurs parcelles pour ce propriétaire</p>
+                  
+                  <div className="max-h-48 overflow-y-auto space-y-2 bg-black/20 rounded-lg p-3">
+                    {parcelles.map((p) => {
+                      const isSelected = newCode.parcelle_ids.includes(p.id);
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            const newIds = isSelected 
+                              ? newCode.parcelle_ids.filter(id => id !== p.id)
+                              : [...newCode.parcelle_ids, p.id];
+                            setNewCode({ ...newCode, parcelle_ids: newIds });
+                          }}
+                          className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
+                            isSelected 
+                              ? 'bg-amber-500/20 border border-amber-500/40' 
+                              : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                          }`}
+                          data-testid={`parcelle-checkbox-${p.id}`}
+                        >
+                          <div className={`w-5 h-5 rounded flex items-center justify-center border-2 ${
+                            isSelected ? 'bg-amber-500 border-amber-500' : 'border-gray-500'
+                          }`}>
+                            {isSelected && <Check className="w-3 h-3 text-black" />}
+                          </div>
+                          <div className="flex-1">
+                            <span className="text-white font-medium text-sm">{p.nom}</span>
+                            <span className="text-gray-500 text-xs ml-2">({p.superficie} {p.unite_superficie || 'ha'})</span>
+                          </div>
+                          <Badge className={`text-xs ${
+                            p.statut === 'disponible' ? 'bg-green-500/20 text-green-400' :
+                            p.statut === 'option' ? 'bg-orange-500/20 text-orange-400' :
+                            'bg-red-500/20 text-red-400'
+                          }`}>
+                            {p.statut}
+                          </Badge>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  {newCode.parcelle_ids.length > 0 && (
+                    <div className="mt-2 flex items-center gap-2 text-amber-400 text-xs">
+                      <Check className="w-4 h-4" />
+                      <span>{newCode.parcelle_ids.length} parcelle(s) sélectionnée(s)</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Propriétaire-specific: Video settings */}
             {newCode.profile_type === 'PROPRIETAIRE' && (
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 space-y-4">
