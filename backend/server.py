@@ -768,6 +768,85 @@ async def send_document(
     else:
         raise HTTPException(status_code=400, detail="Méthode d'envoi non supportée")
 
+# ==================== SURVEILLANCE VIDEO ====================
+
+@api_router.post("/surveillance/access")
+async def get_surveillance_access(
+    code: str = Form(...),
+    parcelle_id: str = Form(...)
+):
+    """Get surveillance video access (PROPRIETAIRE only, code must have camera_enabled)"""
+    access_info = verify_access_code(code, parcelle_id)
+    
+    if not access_info:
+        raise HTTPException(status_code=403, detail="Code d'accès invalide ou expiré")
+    
+    # Check if PROPRIETAIRE profile
+    profile_type = access_info.get("profile_type", "PROSPECT")
+    if profile_type != "PROPRIETAIRE":
+        raise HTTPException(status_code=403, detail="Accès réservé aux propriétaires")
+    
+    # Check if camera access is enabled
+    if not access_info.get("camera_enabled", False):
+        raise HTTPException(status_code=403, detail="Accès caméra non activé pour ce code")
+    
+    video_url = access_info.get("video_url")
+    if not video_url:
+        raise HTTPException(status_code=404, detail="Aucune URL de caméra configurée")
+    
+    # Log the surveillance access
+    log_download(
+        code=code,
+        client_name=access_info["client_name"],
+        parcelle_id=parcelle_id,
+        document_type="surveillance_video",
+        document_name=f"live_stream_{parcelle_id}"
+    )
+    
+    return {
+        "access_granted": True,
+        "client_name": access_info["client_name"],
+        "video_url": video_url,  # Only returned to PROPRIETAIRE
+        "parcelle_id": parcelle_id,
+        "expires_at": access_info.get("expires_at")
+    }
+
+@api_router.post("/documents/verify-profile")
+async def verify_code_profile(
+    code: str = Form(...),
+    parcelle_id: str = Form(...)
+):
+    """Verify code and return profile info (for frontend display logic)"""
+    access_info = verify_access_code(code, parcelle_id)
+    
+    if not access_info:
+        raise HTTPException(status_code=403, detail="Code d'accès invalide ou expiré")
+    
+    profile_type = access_info.get("profile_type", "PROSPECT")
+    
+    # Check expiration for PROSPECT (3 days)
+    is_expired = False
+    days_remaining = None
+    
+    expires_at = datetime.fromisoformat(access_info["expires_at"])
+    now = datetime.now(timezone.utc)
+    
+    if profile_type == "PROSPECT":
+        is_expired = expires_at < now
+        if not is_expired:
+            days_remaining = (expires_at - now).days
+    
+    return {
+        "valid": True,
+        "profile_type": profile_type,
+        "client_name": access_info["client_name"],
+        "is_expired": is_expired,
+        "days_remaining": days_remaining,
+        "camera_enabled": access_info.get("camera_enabled", False) if profile_type == "PROPRIETAIRE" else False,
+        "show_watermark": profile_type == "PROSPECT",  # PROSPECT sees watermark, PROPRIETAIRE doesn't
+        "can_access_surveillance": profile_type == "PROPRIETAIRE" and access_info.get("camera_enabled", False)
+    }
+
 # ==================== AUTH ROUTES ====================
 
 @api_router.post("/auth/login", response_model=LoginResponse)
