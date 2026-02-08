@@ -884,7 +884,7 @@ export const ParcelleDetail = ({ parcelle, onClose, isOpen, onParcelleChange }) 
               </div>
 
               {/* Document Access with Security */}
-              <DocumentAccessSection parcelle={parcelle} t={t} />
+              <DocumentAccessSection parcelle={parcelle} t={t} onParcelleChange={onParcelleChange} />
             </TabsContent>
 
             {/* Caractéristiques Tab */}
