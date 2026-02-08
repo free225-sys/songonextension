@@ -75,6 +75,14 @@ export default function MasterplanPage() {
     setTimeout(() => setSelectedParcelle(null), 300);
   };
 
+  // Handle parcelle change for multi-parcelle owners
+  const handleParcelleChange = (parcelleId) => {
+    const newParcelle = parcelles.find(p => p.id === parcelleId);
+    if (newParcelle) {
+      setSelectedParcelle(newParcelle);
+    }
+  };
+
   const filterOptions = [
     { value: 'all', label: t('masterplan_all') },
     { value: 'disponible', label: t('status_disponible') },
