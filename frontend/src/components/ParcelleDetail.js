@@ -437,24 +437,72 @@ const DocumentAccessSection = ({ parcelle, t }) => {
             </p>
           </div>
         ) : (
-          // Unlocked State
+          // Unlocked State - Different display based on profile
           <div className="space-y-3">
-            {/* Access Info Banner */}
-            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-center gap-3">
-              <Shield className="w-5 h-5 text-green-400 flex-shrink-0" />
+            {/* Profile Badge */}
+            <div className={`rounded-lg p-3 flex items-center gap-3 ${
+              isProprietaire 
+                ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/10 border border-amber-500/30' 
+                : 'bg-green-500/10 border border-green-500/20'
+            }`}>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                isProprietaire ? 'bg-amber-500/20' : 'bg-green-500/20'
+              }`}>
+                <span className="text-2xl">{isProprietaire ? '👑' : '👤'}</span>
+              </div>
               <div className="flex-1">
-                <p className="text-green-400 text-sm font-medium">Accès autorisé</p>
-                <p className="text-gray-400 text-xs">
-                  {clientInfo?.client_name} • Expire: {new Date(clientInfo?.expires_at).toLocaleDateString('fr-FR')}
+                <p className={`text-sm font-playfair font-semibold ${isProprietaire ? 'text-amber-400' : 'text-green-400'}`}>
+                  {isProprietaire ? 'Propriétaire vérifié' : 'Accès Prospect'}
+                </p>
+                <p className="text-gray-400 text-xs font-montserrat">
+                  {clientInfo?.client_name}
+                  {isProprietaire 
+                    ? ' • Accès permanent' 
+                    : ` • ${profileInfo?.days_remaining ?? 0}j restant(s)`
+                  }
                 </p>
               </div>
+              <Shield className={`w-5 h-5 ${isProprietaire ? 'text-amber-400' : 'text-green-400'}`} />
             </div>
 
-            {/* Watermark Notice */}
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
-              <p className="text-amber-400 text-xs flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" />
-                <span>Tous les documents seront marqués d'un filigrane avec votre nom pour traçabilité.</span>
+            {/* PROPRIETAIRE: Surveillance Button */}
+            {isProprietaire && canAccessSurveillance && (
+              <button
+                onClick={handleSurveillanceAccess}
+                disabled={loadingVideo}
+                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white p-4 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-red-500/20 group"
+                data-testid="surveillance-button"
+              >
+                {loadingVideo ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Video className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                    <span className="font-playfair text-lg font-semibold">Surveillance en Direct</span>
+                    <span className="w-3 h-3 bg-red-400 rounded-full animate-pulse" />
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Document Notice based on profile */}
+            <div className={`rounded-lg p-3 ${
+              isProprietaire 
+                ? 'bg-green-500/10 border border-green-500/20' 
+                : 'bg-amber-500/10 border border-amber-500/20'
+            }`}>
+              <p className={`text-xs flex items-center gap-2 ${isProprietaire ? 'text-green-400' : 'text-amber-400'}`}>
+                {isProprietaire ? (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    <span>En tant que propriétaire, vous accédez aux <strong>documents originaux</strong> sans filigrane.</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>Documents avec filigrane de sécurité. Devenez propriétaire pour accéder aux originaux.</span>
+                  </>
+                )}
               </p>
             </div>
 
@@ -478,17 +526,27 @@ const DocumentAccessSection = ({ parcelle, t }) => {
                     <button
                       key={doc.type}
                       onClick={() => handleDocumentAccess(doc.type, doc.label)}
-                      className="w-full flex items-center gap-3 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group border border-white/5 hover:border-green-500/30"
+                      className={`w-full flex items-center gap-3 p-4 rounded-lg transition-colors group border ${
+                        isProprietaire 
+                          ? 'bg-amber-500/5 hover:bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40' 
+                          : 'bg-white/5 hover:bg-white/10 border-white/5 hover:border-green-500/30'
+                      }`}
                       data-testid={`doc-${doc.type}`}
                     >
-                      <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                        <DocIcon className="w-5 h-5 text-green-400" />
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                        isProprietaire ? 'bg-amber-500/10' : 'bg-green-500/10'
+                      }`}>
+                        <DocIcon className={`w-5 h-5 ${isProprietaire ? 'text-amber-400' : 'text-green-400'}`} />
                       </div>
                       <div className="flex-1 text-left">
                         <span className="text-white text-sm font-medium block">{doc.label}</span>
-                        <span className="text-gray-500 text-xs">Cliquer pour accéder</span>
+                        <span className="text-gray-500 text-xs">
+                          {isProprietaire ? 'Document original' : 'Document sécurisé'}
+                        </span>
                       </div>
-                      <ExternalLink className="w-4 h-4 text-gray-500 group-hover:text-green-400 transition-colors" />
+                      <ExternalLink className={`w-4 h-4 transition-colors ${
+                        isProprietaire ? 'text-amber-500/50 group-hover:text-amber-400' : 'text-gray-500 group-hover:text-green-400'
+                      }`} />
                     </button>
                   );
                 })
@@ -497,7 +555,7 @@ const DocumentAccessSection = ({ parcelle, t }) => {
 
             {/* Re-lock option */}
             <button 
-              onClick={() => { setIsUnlocked(false); setAccessCode(''); setClientInfo(null); }}
+              onClick={() => { setIsUnlocked(false); setAccessCode(''); setClientInfo(null); setProfileInfo(null); }}
               className="text-gray-500 text-xs hover:text-gray-400 transition-colors flex items-center gap-1"
             >
               <Lock className="w-3 h-3" />
@@ -512,22 +570,45 @@ const DocumentAccessSection = ({ parcelle, t }) => {
         <DialogContent className="bg-[#0d1410] border-white/10 max-w-md">
           <DialogHeader>
             <DialogTitle className="text-white font-playfair flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-green-400" />
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                isProprietaire ? 'bg-amber-500/10' : 'bg-green-500/10'
+              }`}>
+                <FileText className={`w-5 h-5 ${isProprietaire ? 'text-amber-400' : 'text-green-400'}`} />
               </div>
               {selectedDocument?.label}
+              {isProprietaire && (
+                <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30 ml-auto">
+                  Original
+                </Badge>
+              )}
             </DialogTitle>
             <DialogDescription className="text-gray-400">
-              Document préparé pour <span className="text-green-400 font-medium">{clientInfo?.client_name}</span>
+              Document pour <span className={`font-medium ${isProprietaire ? 'text-amber-400' : 'text-green-400'}`}>{clientInfo?.client_name}</span>
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            {/* Watermark Notice */}
-            <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
+            {/* Document Info based on profile */}
+            <div className={`border rounded-lg p-4 ${
+              isProprietaire 
+                ? 'bg-green-500/5 border-green-500/20' 
+                : 'bg-amber-500/5 border-amber-500/20'
+            }`}>
               <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                <div>
+                {isProprietaire ? (
+                  <>
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-green-400 text-sm font-medium font-montserrat">Document Original</p>
+                      <p className="text-gray-400 text-xs mt-1 font-montserrat">
+                        En tant que propriétaire, vous téléchargez le document <strong>sans filigrane</strong>.
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div>
                   <p className="text-amber-400 text-sm font-medium mb-1">Avertissement légal</p>
                   <p className="text-gray-400 text-xs leading-relaxed">
                     Ce document est <strong className="text-white">strictement confidentiel</strong>. 
