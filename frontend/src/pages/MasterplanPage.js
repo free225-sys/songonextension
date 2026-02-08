@@ -251,21 +251,14 @@ export default function MasterplanPage() {
         </div>
       </main>
 
-      {/* Detail Sidebar */}
-      <ParcelleDetail
+      {/* Immersive Parcelle Modal */}
+      <ParcelleModal
         parcelle={selectedParcelle}
-        onClose={handleCloseDetail}
         isOpen={isDetailOpen}
+        onClose={handleCloseDetail}
         onParcelleChange={handleParcelleChange}
+        parcelles={parcelles}
       />
-
-      {/* Backdrop */}
-      {isDetailOpen && (
-        <div 
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000]"
-          onClick={handleCloseDetail}
-        />
-      )}
 
       <Footer />
     </div>
