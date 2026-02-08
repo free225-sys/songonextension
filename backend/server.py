@@ -792,7 +792,7 @@ async def get_surveillance_access(
     code: str = Form(...),
     parcelle_id: str = Form(...)
 ):
-    """Get surveillance video access (PROPRIETAIRE only, code must have camera_enabled)"""
+    """Get surveillance video access (PROPRIETAIRE only, per-parcelle config)"""
     access_info = verify_access_code(code, parcelle_id)
     
     if not access_info:
@@ -803,13 +803,19 @@ async def get_surveillance_access(
     if profile_type != "PROPRIETAIRE":
         raise HTTPException(status_code=403, detail="Accès réservé aux propriétaires")
     
-    # Check if camera access is enabled
-    if not access_info.get("camera_enabled", False):
-        raise HTTPException(status_code=403, detail="Accès caméra non activé pour ce code")
+    # Get per-parcelle config, fallback to global config
+    parcelle_configs = access_info.get("parcelle_configs", {})
+    parcelle_config = parcelle_configs.get(parcelle_id, {})
     
-    video_url = access_info.get("video_url")
+    camera_enabled = parcelle_config.get("camera_enabled", access_info.get("camera_enabled", False))
+    video_url = parcelle_config.get("video_url") or access_info.get("video_url")
+    
+    # Check if camera access is enabled for this parcelle
+    if not camera_enabled:
+        raise HTTPException(status_code=403, detail="Accès caméra non activé pour cette parcelle")
+    
     if not video_url:
-        raise HTTPException(status_code=404, detail="Aucune URL de caméra configurée")
+        raise HTTPException(status_code=404, detail="Aucune URL de caméra configurée pour cette parcelle")
     
     # Log the surveillance access
     log_download(
