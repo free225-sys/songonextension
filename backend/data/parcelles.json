@@ -1403,5 +1403,18 @@
       "timestamp": "2026-02-08T13:31:36.321904+00:00",
       "ip_address": "N/A"
     }
+  ],
+  "code_requests": [
+    {
+      "id": "3756ef65-1338-4f23-80e7-71055b60f6b5",
+      "nom": "Kouassi",
+      "prenom": "Marie",
+      "whatsapp": "+225 07 12 34 56 78",
+      "parcelle_id": "tf-223737",
+      "parcelle_nom": "TF 223737",
+      "status": "pending",
+      "created_at": "2026-02-08T14:22:46.447620+00:00",
+      "notes": ""
+    }
   ]
 }
