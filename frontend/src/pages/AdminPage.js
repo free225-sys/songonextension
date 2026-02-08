@@ -1776,6 +1776,7 @@ export default function AdminPage() {
   const [stats, setStats] = useState({ total: 0, disponible: 0, option: 0, vendu: 0 });
   const [loading, setLoading] = useState(true);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [requestCount, setRequestCount] = useState(0);
   const [lastCheckTime, setLastCheckTime] = useState(null);
 
   useEffect(() => {
@@ -1797,6 +1798,17 @@ export default function AdminPage() {
     }
     setLoading(false);
   }, []);
+
+  // Fetch code access requests count
+  const fetchRequestsCount = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const response = await axios.get(`${API}/admin/code-requests?status=pending`, { headers: getAuthHeaders() });
+      setRequestCount(response.data.stats?.pending || 0);
+    } catch (error) {
+      console.error('Failed to fetch requests:', error);
+    }
+  }, [isAuthenticated, getAuthHeaders]);
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
