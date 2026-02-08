@@ -312,8 +312,12 @@ const DocumentAccessSection = ({ parcelle, t }) => {
       link.click();
       document.body.removeChild(link);
       
+      const docDescription = profileInfo?.show_watermark 
+        ? `Document avec filigrane pour ${clientInfo?.client_name}`
+        : `Document ORIGINAL pour ${clientInfo?.client_name}`;
+      
       toast.success('Téléchargement démarré', {
-        description: `Document avec filigrane pour ${clientInfo?.client_name}`
+        description: docDescription
       });
     } catch (error) {
       toast.error('Erreur lors du téléchargement');
@@ -363,6 +367,10 @@ const DocumentAccessSection = ({ parcelle, t }) => {
     }
   };
 
+  // Determine if user is PROSPECT or PROPRIETAIRE
+  const isProprietaire = profileInfo?.profile_type === 'PROPRIETAIRE';
+  const canAccessSurveillance = profileInfo?.can_access_surveillance;
+
   return (
     <div className="card-glass p-4">
       <h3 className="font-playfair text-sm font-semibold text-green-400 mb-3 flex items-center gap-2">
@@ -377,6 +385,11 @@ const DocumentAccessSection = ({ parcelle, t }) => {
       </div>
 
       <Separator className="my-4 bg-white/10" />
+
+      {/* Video Player Dialog */}
+      {showVideoPlayer && videoUrl && (
+        <VideoPlayer videoUrl={videoUrl} onClose={() => setShowVideoPlayer(false)} />
+      )}
 
       {/* Documents Section */}
       <div>
