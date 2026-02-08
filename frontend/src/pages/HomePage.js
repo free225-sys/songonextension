@@ -4,7 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { ParcelleDetail } from '../components/ParcelleDetail';
+import { ParcelleModal } from '../components/ParcelleModal';
 import {
   Dialog,
   DialogContent,
