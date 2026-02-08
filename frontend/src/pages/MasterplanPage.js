@@ -256,6 +256,7 @@ export default function MasterplanPage() {
         parcelle={selectedParcelle}
         onClose={handleCloseDetail}
         isOpen={isDetailOpen}
+        onParcelleChange={handleParcelleChange}
       />
 
       {/* Backdrop */}
