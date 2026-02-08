@@ -22,6 +22,14 @@ Développer l'application web Songon Extension (anciennement extension de onegre
 - Caméras ENSTER/EseeCloud supportées (HLS, RTSP)
 - **Multi-parcelles** : Un code peut être lié à plusieurs propriétés avec navigation intégrée
 
+### Système de Demande d'Accès (nouveau)
+- Interface glassmorphism élégante pour la section documents
+- Bouton **"Pas de code ? Demander un accès"**
+- Formulaire : Prénom, Nom, Numéro WhatsApp
+- Message de confirmation personnalisé
+- Demandes visibles en temps réel dans le dashboard admin
+- Actions admin : Marquer contacté → Complété → Supprimer
+
 ## Choix Utilisateur
 - Authentification: JWT simple (admin/admin via .env)
 - Thème: Mode "Nature" + **Thème Clair Prestigieux pour Masterplan**
