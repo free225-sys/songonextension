@@ -163,4 +163,5 @@ Tunnel d'accès:
 ## Credentials Test
 - **Admin**: `admin` / `admin`
 - **Code test**: Générer via Dashboard Admin → Codes d'accès
+- **Code multi-parcelles test**: `DJ9MFX7J` (Jean Dupont - 3 parcelles: tf-223737, tf-223738, tf-223740)
 - **Email Resend**: Configuré mais limité à l'email du compte en mode test
