@@ -534,6 +534,14 @@ export default function HomePage() {
     setTimeout(() => setSelectedParcelle(null), 300);
   };
 
+  // Handle parcelle change for multi-parcelle owners
+  const handleParcelleChange = (parcelleId) => {
+    const newParcelle = parcelles.find(p => p.id === parcelleId);
+    if (newParcelle) {
+      setSelectedParcelle(newParcelle);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#050a07]" data-testid="home-page">
       <OnePageNavbar activeSection={activeSection} />
