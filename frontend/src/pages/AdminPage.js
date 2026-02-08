@@ -70,7 +70,7 @@ const ModernStatCard = ({ icon: Icon, label, value, trend, trendValue, color, de
 );
 
 // Admin Sidebar - Modern Design
-const AdminSidebar = ({ activeTab, setActiveTab, notificationCount = 0 }) => {
+const AdminSidebar = ({ activeTab, setActiveTab, notificationCount = 0, requestCount = 0 }) => {
   const { t } = useLanguage();
   const { logout } = useAuth();
   const navigate = useNavigate();
