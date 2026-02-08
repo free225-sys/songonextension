@@ -76,11 +76,116 @@ const TagList = ({ items }) => (
   </div>
 );
 
-// Document Access Component with Code Verification
+// Video Player Component for PROPRIETAIRE surveillance
+const VideoPlayer = ({ videoUrl, onClose }) => {
+  const videoRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    // Auto-play when component mounts
+    if (videoRef.current && videoUrl) {
+      videoRef.current.play().catch(e => {
+        console.error('Auto-play failed:', e);
+        setError('La lecture automatique a échoué. Cliquez sur Play.');
+      });
+    }
+  }, [videoUrl]);
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="bg-black border-white/10 max-w-4xl p-0 overflow-hidden">
+        <DialogHeader className="p-4 pb-0">
+          <DialogTitle className="font-playfair text-white flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center animate-pulse">
+              <Video className="w-5 h-5 text-red-500" />
+            </div>
+            <span>Surveillance en Direct</span>
+            <Badge className="bg-red-500 text-white border-0 ml-auto animate-pulse">
+              ● LIVE
+            </Badge>
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="relative aspect-video bg-gray-900">
+          {error ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+                <p className="text-gray-400">{error}</p>
+              </div>
+            </div>
+          ) : (
+            <video
+              ref={videoRef}
+              className="w-full h-full object-contain"
+              src={videoUrl}
+              muted={isMuted}
+              playsInline
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              onError={() => setError('Impossible de charger le flux vidéo')}
+            />
+          )}
+          
+          {/* Video Controls */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+            <div className="flex items-center justify-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={togglePlay}
+                className="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 text-white"
+              >
+                {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleMute}
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white"
+              >
+                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        <div className="p-4 border-t border-white/10">
+          <p className="text-gray-500 text-xs text-center font-montserrat">
+            Flux sécurisé • Accès réservé aux propriétaires • Ne pas partager
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Document Access Component with Code Verification and Profile Support
 const DocumentAccessSection = ({ parcelle, t }) => {
   const [accessCode, setAccessCode] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [clientInfo, setClientInfo] = useState(null);
+  const [profileInfo, setProfileInfo] = useState(null); // Profile type info
   const [verifying, setVerifying] = useState(false);
   const [showOptionsDialog, setShowOptionsDialog] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -89,9 +194,12 @@ const DocumentAccessSection = ({ parcelle, t }) => {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [emailAddress, setEmailAddress] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [videoUrl, setVideoUrl] = useState(null);
+  const [loadingVideo, setLoadingVideo] = useState(false);
 
   // Fetch available documents for this parcelle
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchAvailableDocuments = async () => {
       try {
         const response = await axios.get(`${API}/parcelles/${parcelle.id}/documents`);
@@ -116,22 +224,57 @@ const DocumentAccessSection = ({ parcelle, t }) => {
 
     setVerifying(true);
     try {
-      const response = await axios.post(`${API}/documents/verify-code`, {
-        code: accessCode.toUpperCase(),
-        parcelle_id: parcelle.id
-      });
+      // Use the new profile verification endpoint
+      const response = await axios.post(`${API}/documents/verify-profile`, 
+        new URLSearchParams({
+          code: accessCode.toUpperCase(),
+          parcelle_id: parcelle.id
+        })
+      );
 
       if (response.data.valid) {
         setIsUnlocked(true);
         setClientInfo(response.data);
+        setProfileInfo(response.data);
+        
+        // Check if expired (for PROSPECT)
+        if (response.data.is_expired) {
+          toast.error('Votre code a expiré', {
+            description: 'Contactez-nous pour renouveler votre accès ou devenir propriétaire'
+          });
+          setIsUnlocked(false);
+          return;
+        }
+        
+        const profileLabel = response.data.profile_type === 'PROPRIETAIRE' ? '👑 Propriétaire' : '👤 Prospect';
         toast.success(`Bienvenue ${response.data.client_name}`, {
-          description: 'Vous pouvez maintenant consulter les documents'
+          description: `Profil: ${profileLabel}`
         });
       }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Code invalide ou expiré');
     }
     setVerifying(false);
+  };
+
+  const handleSurveillanceAccess = async () => {
+    setLoadingVideo(true);
+    try {
+      const response = await axios.post(`${API}/surveillance/access`,
+        new URLSearchParams({
+          code: accessCode.toUpperCase(),
+          parcelle_id: parcelle.id
+        })
+      );
+      
+      if (response.data.access_granted) {
+        setVideoUrl(response.data.video_url);
+        setShowVideoPlayer(true);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Accès surveillance refusé');
+    }
+    setLoadingVideo(false);
   };
 
   const handleDocumentAccess = (docType, docLabel) => {
