@@ -1255,6 +1255,24 @@ async def create_access_code(request: AccessCodeCreate, username: str = Depends(
         expires_hours = min(request.expires_hours, 72)
         expires_at = datetime.now(timezone.utc) + timedelta(hours=expires_hours)
     
+    # Build parcelle_configs for PROPRIETAIRE
+    parcelle_configs = {}
+    if request.profile_type == "PROPRIETAIRE":
+        if request.parcelle_configs:
+            # New format: per-parcelle configurations
+            for pc in request.parcelle_configs:
+                parcelle_configs[pc.parcelle_id] = {
+                    "video_url": pc.video_url,
+                    "camera_enabled": pc.camera_enabled
+                }
+        elif request.parcelle_ids and (request.video_url or request.camera_enabled):
+            # Legacy format: apply same config to all selected parcelles
+            for pid in request.parcelle_ids:
+                parcelle_configs[pid] = {
+                    "video_url": request.video_url,
+                    "camera_enabled": request.camera_enabled
+                }
+    
     code_entry = {
         "id": str(uuid.uuid4()),
         "code": code,
@@ -1266,7 +1284,9 @@ async def create_access_code(request: AccessCodeCreate, username: str = Depends(
         "created_by": username,
         "active": True,
         "usage_count": 0,
-        "profile_type": request.profile_type,  # PROSPECT or PROPRIETAIRE
+        "profile_type": request.profile_type,
+        "parcelle_configs": parcelle_configs,  # Per-parcelle camera configs
+        # Legacy fields for backward compatibility
         "video_url": request.video_url if request.profile_type == "PROPRIETAIRE" else None,
         "camera_enabled": request.camera_enabled if request.profile_type == "PROPRIETAIRE" else False
     }
@@ -1274,7 +1294,7 @@ async def create_access_code(request: AccessCodeCreate, username: str = Depends(
     data.setdefault("access_codes", []).append(code_entry)
     save_data(data)
     
-    logger.info(f"Access code generated for {request.client_name} ({request.profile_type}): {code}")
+    logger.info(f"Access code generated for {request.client_name} ({request.profile_type}) with {len(request.parcelle_ids)} parcelle(s): {code}")
     
     return {
         "code": code,
@@ -1282,7 +1302,8 @@ async def create_access_code(request: AccessCodeCreate, username: str = Depends(
         "profile_type": request.profile_type,
         "expires_at": expires_at.isoformat(),
         "parcelle_access": request.parcelle_ids or "all",
-        "camera_enabled": code_entry["camera_enabled"]
+        "parcelle_count": len(request.parcelle_ids),
+        "parcelle_configs": parcelle_configs
     }
 
 @api_router.get("/admin/access-codes")
@@ -1290,8 +1311,9 @@ async def list_access_codes(username: str = Depends(verify_token)):
     """List all access codes"""
     data = load_data()
     codes = data.get("access_codes", [])
+    parcelles = {p["id"]: p["nom"] for p in data.get("parcelles", [])}
     
-    # Add status info
+    # Add status info and parcelle names
     now = datetime.now(timezone.utc)
     for code in codes:
         expires_at = datetime.fromisoformat(code["expires_at"])
@@ -1299,6 +1321,11 @@ async def list_access_codes(username: str = Depends(verify_token)):
         # Add profile_type if missing (backward compatibility)
         if "profile_type" not in code:
             code["profile_type"] = "PROSPECT"
+        # Add parcelle names for display
+        code["parcelle_names"] = [parcelles.get(pid, pid) for pid in code.get("parcelle_ids", [])]
+        # Ensure parcelle_configs exists
+        if "parcelle_configs" not in code:
+            code["parcelle_configs"] = {}
     
     return {"access_codes": codes}
 
