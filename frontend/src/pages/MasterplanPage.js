@@ -3,7 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { MasterplanMap } from '../components/MasterplanMap';
-import { ParcelleDetail } from '../components/ParcelleDetail';
+import { ParcelleModal } from '../components/ParcelleModal';
 import { Button } from '../components/ui/button';
 import { 
   Filter, MapPin, ChevronDown, Info, Layers, Sun
