@@ -135,7 +135,10 @@ class AccessCodeCreate(BaseModel):
     client_name: str
     client_email: str
     parcelle_ids: List[str] = []  # Empty = all parcelles
-    expires_hours: int = 72  # Default 72 hours
+    expires_hours: int = 72  # Default 72 hours (only for PROSPECT)
+    profile_type: str = "PROSPECT"  # PROSPECT or PROPRIETAIRE
+    video_url: Optional[str] = None  # Camera stream URL (for PROPRIETAIRE)
+    camera_enabled: bool = False  # Enable camera access
 
 class AccessCodeVerify(BaseModel):
     code: str
