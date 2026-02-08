@@ -1571,6 +1571,111 @@ def get_relative_time(timestamp_str: str) -> str:
     except:
         return ""
 
+# ==================== CODE ACCESS REQUESTS ====================
+
+@api_router.post("/code-requests")
+async def submit_code_request(request: CodeAccessRequest):
+    """Submit a request for access code (public endpoint)"""
+    data = load_data()
+    
+    # Create new request
+    new_request = {
+        "id": str(uuid.uuid4()),
+        "nom": request.nom,
+        "prenom": request.prenom,
+        "whatsapp": request.whatsapp,
+        "parcelle_id": request.parcelle_id,
+        "parcelle_nom": request.parcelle_nom or request.parcelle_id,
+        "status": "pending",  # pending, contacted, completed, rejected
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "notes": ""
+    }
+    
+    if "code_requests" not in data:
+        data["code_requests"] = []
+    
+    data["code_requests"].append(new_request)
+    save_data(data)
+    
+    logger.info(f"New code request from {request.prenom} {request.nom} for parcelle {request.parcelle_id}")
+    
+    return {
+        "success": True,
+        "message": "Votre demande a été enregistrée",
+        "request_id": new_request["id"]
+    }
+
+@api_router.get("/admin/code-requests")
+async def get_code_requests(
+    status: Optional[str] = None,
+    username: str = Depends(verify_token)
+):
+    """Get all code requests (admin only)"""
+    data = load_data()
+    requests = data.get("code_requests", [])
+    
+    # Filter by status if provided
+    if status:
+        requests = [r for r in requests if r.get("status") == status]
+    
+    # Sort by date descending (newest first)
+    requests.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    
+    # Add relative time
+    for req in requests:
+        req["relative_time"] = get_relative_time(req.get("created_at", ""))
+    
+    # Count by status
+    all_requests = data.get("code_requests", [])
+    stats = {
+        "total": len(all_requests),
+        "pending": len([r for r in all_requests if r.get("status") == "pending"]),
+        "contacted": len([r for r in all_requests if r.get("status") == "contacted"]),
+        "completed": len([r for r in all_requests if r.get("status") == "completed"])
+    }
+    
+    return {
+        "requests": requests,
+        "stats": stats
+    }
+
+@api_router.put("/admin/code-requests/{request_id}")
+async def update_code_request(
+    request_id: str,
+    status: str = Form(...),
+    notes: str = Form(""),
+    username: str = Depends(verify_token)
+):
+    """Update a code request status"""
+    data = load_data()
+    requests = data.get("code_requests", [])
+    
+    for req in requests:
+        if req["id"] == request_id:
+            req["status"] = status
+            req["notes"] = notes
+            req["updated_at"] = datetime.now(timezone.utc).isoformat()
+            req["updated_by"] = username
+            save_data(data)
+            
+            return {"success": True, "message": "Demande mise à jour"}
+    
+    raise HTTPException(status_code=404, detail="Demande non trouvée")
+
+@api_router.delete("/admin/code-requests/{request_id}")
+async def delete_code_request(
+    request_id: str,
+    username: str = Depends(verify_token)
+):
+    """Delete a code request"""
+    data = load_data()
+    requests = data.get("code_requests", [])
+    
+    data["code_requests"] = [r for r in requests if r["id"] != request_id]
+    save_data(data)
+    
+    return {"success": True, "message": "Demande supprimée"}
+
 # Include the router in the main app
 app.include_router(api_router)
 
