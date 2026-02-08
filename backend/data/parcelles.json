@@ -1392,6 +1392,16 @@
       "document_name": "live_stream_tf-223737",
       "timestamp": "2026-02-08T13:30:29.825613+00:00",
       "ip_address": "N/A"
+    },
+    {
+      "id": "3d8ac270-f4dd-4c58-b68c-72749b6926de",
+      "code": "DJ9MFX7J",
+      "client_name": "Jean Dupont",
+      "parcelle_id": "tf-223737",
+      "document_type": "surveillance_video",
+      "document_name": "live_stream_tf-223737",
+      "timestamp": "2026-02-08T13:31:36.321904+00:00",
+      "ip_address": "N/A"
     }
   ]
 }
