@@ -877,6 +877,7 @@ export default function HomePage() {
         parcelle={selectedParcelle}
         onClose={handleCloseDetail}
         isOpen={isDetailOpen}
+        onParcelleChange={handleParcelleChange}
       />
 
       {/* Backdrop for detail sidebar */}
