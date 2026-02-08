@@ -872,21 +872,14 @@ export default function HomePage() {
       {/* ==================== FOOTER ==================== */}
       <Footer t={t} />
 
-      {/* ==================== PARCELLE DETAIL SIDEBAR ==================== */}
-      <ParcelleDetail
+      {/* ==================== PARCELLE MODAL (Immersive) ==================== */}
+      <ParcelleModal
         parcelle={selectedParcelle}
-        onClose={handleCloseDetail}
         isOpen={isDetailOpen}
+        onClose={handleCloseDetail}
         onParcelleChange={handleParcelleChange}
+        parcelles={parcelles}
       />
-
-      {/* Backdrop for detail sidebar */}
-      {isDetailOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1000]"
-          onClick={handleCloseDetail}
-        />
-      )}
     </div>
   );
 }
