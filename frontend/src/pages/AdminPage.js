@@ -1384,7 +1384,7 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
                   <p className="text-gray-500 text-xs mb-3">Sélectionnez une ou plusieurs parcelles pour ce propriétaire</p>
                   
                   <div className="max-h-48 overflow-y-auto space-y-2 bg-black/20 rounded-lg p-3">
-                    {parcelles.map((p) => {
+                    {parcelles.filter(p => p.statut !== 'vendu').map((p) => {
                       const isSelected = newCode.parcelle_ids.includes(p.id);
                       return (
                         <button
@@ -1414,14 +1414,16 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
                           </div>
                           <Badge className={`text-xs ${
                             p.statut === 'disponible' ? 'bg-green-500/20 text-green-400' :
-                            p.statut === 'option' ? 'bg-orange-500/20 text-orange-400' :
-                            'bg-red-500/20 text-red-400'
+                            'bg-orange-500/20 text-orange-400'
                           }`}>
                             {p.statut}
                           </Badge>
                         </button>
                       );
                     })}
+                    {parcelles.filter(p => p.statut !== 'vendu').length === 0 && (
+                      <p className="text-gray-500 text-sm text-center py-4">Aucune parcelle disponible</p>
+                    )}
                   </div>
                   
                   {newCode.parcelle_ids.length > 0 && (
