@@ -80,6 +80,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, notificationCount = 0 }) => {
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'parcelles', icon: Map, label: 'Parcelles' },
     { id: 'access', icon: Key, label: 'Codes d\'accès' },
+    { id: 'requests', icon: Users, label: 'Demandes', badge: requestCount },
     { id: 'logs', icon: FileText, label: 'Journal', badge: notificationCount },
     { id: 'kmz', icon: Upload, label: 'Import KMZ' },
   ];
