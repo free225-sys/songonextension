@@ -1221,6 +1221,25 @@ async def revoke_access_code(code_id: str, username: str = Depends(verify_token)
     
     raise HTTPException(status_code=404, detail="Code non trouvé")
 
+@api_router.put("/admin/access-codes/{code_id}")
+async def update_access_code(code_id: str, updates: dict, username: str = Depends(verify_token)):
+    """Update an access code (video_url, camera_enabled)"""
+    data = load_data()
+    codes = data.get("access_codes", [])
+    
+    allowed_fields = ["video_url", "camera_enabled", "client_name", "client_email"]
+    
+    for i, code in enumerate(codes):
+        if code["id"] == code_id:
+            for field in allowed_fields:
+                if field in updates:
+                    codes[i][field] = updates[field]
+            data["access_codes"] = codes
+            save_data(data)
+            return {"updated": code_id, "code": codes[i]}
+    
+    raise HTTPException(status_code=404, detail="Code non trouvé")
+
 @api_router.get("/admin/download-logs")
 async def get_download_logs(username: str = Depends(verify_token)):
     """Get document download logs"""
