@@ -1027,14 +1027,22 @@ const ParcelleEditDialog = ({ parcelle, onClose, onSave, getAuthHeaders }) => {
   );
 };
 
-// Access Codes Tab
+// Access Codes Tab with Profile Types
 const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
   const [codes, setCodes] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedCodeDetails, setSelectedCodeDetails] = useState(null);
-  const [newCode, setNewCode] = useState({ client_name: '', client_email: '', parcelle_ids: [], expires_hours: 72 });
+  const [newCode, setNewCode] = useState({ 
+    client_name: '', 
+    client_email: '', 
+    parcelle_ids: [], 
+    expires_hours: 72,
+    profile_type: 'PROSPECT',
+    video_url: '',
+    camera_enabled: false
+  });
 
   const fetchData = async () => {
     try {
@@ -1069,9 +1077,23 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
     }
     try {
       const response = await axios.post(`${API}/admin/access-codes`, newCode, { headers: getAuthHeaders() });
-      toast.success(<div><p className="font-medium">Code généré</p><p className="text-lg font-mono mt-1">{response.data.code}</p></div>, { duration: 10000 });
+      toast.success(
+        <div>
+          <p className="font-medium">Code {newCode.profile_type} généré</p>
+          <p className="text-lg font-mono mt-1">{response.data.code}</p>
+        </div>, 
+        { duration: 10000 }
+      );
       setShowCreateDialog(false);
-      setNewCode({ client_name: '', client_email: '', parcelle_ids: [], expires_hours: 72 });
+      setNewCode({ 
+        client_name: '', 
+        client_email: '', 
+        parcelle_ids: [], 
+        expires_hours: 72,
+        profile_type: 'PROSPECT',
+        video_url: '',
+        camera_enabled: false
+      });
       fetchData();
     } catch (error) {
       toast.error('Erreur lors de la création');
@@ -1098,7 +1120,7 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="font-playfair text-3xl font-bold text-white mb-2">Codes d'accès</h1>
-          <p className="font-montserrat text-gray-400">Gérez les codes d'accès aux documents confidentiels</p>
+          <p className="font-montserrat text-gray-400">Gérez les profils PROSPECT et PROPRIÉTAIRE</p>
         </motion.div>
         <Button onClick={() => setShowCreateDialog(true)} className="bg-gradient-to-r from-green-500 to-green-600 text-black hover:from-green-600 hover:to-green-700" data-testid="create-code-btn">
           <Plus className="w-4 h-4 mr-2" />Nouveau code
@@ -1106,9 +1128,10 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <ModernStatCard icon={Key} label="Codes générés" value={codes.length} color="bg-gradient-to-br from-blue-500 to-blue-600" />
-        <ModernStatCard icon={CheckCircle} label="Codes actifs" value={codes.filter(c => c.active && !c.is_expired).length} color="bg-gradient-to-br from-green-500 to-green-600" />
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+        <ModernStatCard icon={Key} label="Total codes" value={codes.length} color="bg-gradient-to-br from-blue-500 to-blue-600" />
+        <ModernStatCard icon={Users} label="Prospects" value={codes.filter(c => c.profile_type === 'PROSPECT' && c.active).length} color="bg-gradient-to-br from-amber-500 to-amber-600" />
+        <ModernStatCard icon={CheckCircle} label="Propriétaires" value={codes.filter(c => c.profile_type === 'PROPRIETAIRE' && c.active).length} color="bg-gradient-to-br from-green-500 to-green-600" />
         <ModernStatCard icon={Download} label="Documents consultés" value={logs.length} color="bg-gradient-to-br from-purple-500 to-purple-600" />
         <ModernStatCard icon={AlertCircle} label="Expirés/Révoqués" value={codes.filter(c => !c.active || c.is_expired).length} color="bg-gradient-to-br from-red-500 to-red-600" />
       </div>
@@ -1120,8 +1143,9 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
             <thead>
               <tr className="border-b border-white/10">
                 <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Code</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Profil</th>
                 <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Client</th>
-                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Email</th>
+                <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Caméra</th>
                 <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Docs consultés</th>
                 <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Expiration</th>
                 <th className="text-left p-4 font-montserrat text-gray-400 text-sm font-medium">Statut</th>
