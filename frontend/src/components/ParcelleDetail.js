@@ -528,6 +528,15 @@ const DocumentAccessSection = ({ parcelle, t, onParcelleChange }) => {
               <Shield className={`w-5 h-5 ${isProprietaire ? 'text-amber-400' : 'text-green-400'}`} />
             </div>
 
+            {/* Multi-Parcelle Navigation for PROPRIETAIRE */}
+            {isProprietaire && isMultiParcelle && (
+              <MultiParcelleNav 
+                parcelles={ownerParcelles}
+                currentParcelleId={parcelle.id}
+                onSelectParcelle={handleParcelleSwitch}
+              />
+            )}
+
             {/* PROPRIETAIRE: Surveillance Button */}
             {isProprietaire && canAccessSurveillance && (
               <button
