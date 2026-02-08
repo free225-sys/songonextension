@@ -65,6 +65,27 @@ Tunnel d'accès:
 
 ## Ce qui a été implémenté
 
+### Version 2.3.0 - Interface Immersive Haut de Gamme (08/02/2026)
+- **Nouveau Layout Modal Immersif** :
+  - Fenêtre large (75-80% de l'écran) au lieu du panneau latéral
+  - Design glassmorphism premium (fond noir 85% opacité, blur 20px)
+  - Structure **deux colonnes** sur desktop :
+    - Gauche : Informations administratives (foncières, localisation)
+    - Droite : Zone interactive (documents, vidéo)
+- **Typographie Premium** :
+  - Playfair Display pour les titres (numéro de lot, sections)
+  - Montserrat pour les données techniques
+- **Intégration Video.js** :
+  - Lecteur vidéo intégré pour les propriétaires
+  - Support des flux HLS/RTSP
+  - Contrôles personnalisés (Play/Pause, Mute, Fullscreen)
+  - Badge "LIVE" animé
+  - Placeholder élégant si caméra non configurée
+- **Améliorations UX** :
+  - Cards avec fond semi-transparent
+  - Icônes minimalistes pour chaque information
+  - Transition fluide entre les états
+
 ### Version 2.2.0 - Interface UX Premium & Système de Demandes (08/02/2026)
 - **Design Glassmorphism** : Nouvelle interface élégante pour la section Documents
   - Fond semi-transparent avec blur
