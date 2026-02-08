@@ -156,6 +156,14 @@ class DocumentAccessRequest(BaseModel):
     parcelle_id: str
     document_type: str
 
+class CodeAccessRequest(BaseModel):
+    """Request for access code from a visitor"""
+    nom: str
+    prenom: str
+    whatsapp: str
+    parcelle_id: str
+    parcelle_nom: Optional[str] = None
+
 # ==================== HELPERS ====================
 
 def load_data():
