@@ -65,6 +65,30 @@ Tunnel d'accès:
 
 ## Ce qui a été implémenté
 
+### Version 2.2.0 - Interface UX Premium & Système de Demandes (08/02/2026)
+- **Design Glassmorphism** : Nouvelle interface élégante pour la section Documents
+  - Fond semi-transparent avec blur
+  - Éléments décoratifs (cercles lumineux)
+  - Titre en Playfair Display doré
+  - Description en Montserrat
+- **Système de Demande d'Accès** :
+  - Bouton "Pas de code ? Demander un accès" avec icône Sparkles
+  - Formulaire court : Prénom, Nom, WhatsApp
+  - Message de confirmation personnalisé
+- **Dashboard Admin - Onglet "Demandes"** :
+  - Statistiques (Total, En attente, Contactés, Complétés)
+  - Filtres par statut
+  - Liste des demandes avec actions :
+    - Lien WhatsApp direct
+    - Bouton "Contacté" / "Complété"
+    - Suppression
+  - Badge en temps réel dans la navigation
+- **Endpoints API** :
+  - `POST /api/code-requests` - Soumettre une demande
+  - `GET /api/admin/code-requests` - Liste des demandes
+  - `PUT /api/admin/code-requests/{id}` - Mettre à jour statut
+  - `DELETE /api/admin/code-requests/{id}` - Supprimer
+
 ### Version 2.1.0 - Multi-Parcelles pour Propriétaires (08/02/2026)
 - **Navigation Multi-Parcelles** : Les propriétaires avec plusieurs terrains peuvent naviguer entre leurs propriétés
 - **Interface de navigation** : Barre avec boutons pour chaque parcelle (nom + superficie)
