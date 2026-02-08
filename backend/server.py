@@ -176,6 +176,8 @@ def load_data():
                 data["access_codes"] = []
             if "download_logs" not in data:
                 data["download_logs"] = []
+            if "code_requests" not in data:
+                data["code_requests"] = []
             return data
     except FileNotFoundError:
         return {
@@ -183,7 +185,8 @@ def load_data():
             "config": {"map_center": [-4.287, 5.345], "map_zoom": 15}, 
             "admin": {},
             "access_codes": [],
-            "download_logs": []
+            "download_logs": [],
+            "code_requests": []
         }
 
 def save_data(data):
