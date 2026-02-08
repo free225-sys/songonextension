@@ -460,45 +460,146 @@ const DocumentAccessSection = ({ parcelle, t, onParcelleChange }) => {
         <span className="text-gray-400 text-xs block mb-3">{t('field_documents')}</span>
 
         {!isUnlocked ? (
-          // Locked State
-          <div className="bg-black/40 rounded-xl p-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-8 h-8 text-amber-500" />
-            </div>
-            <h4 className="font-playfair text-lg font-semibold text-white mb-2">
-              Documents Officiels Sécurisés
-            </h4>
-            <p className="text-gray-400 text-sm mb-4">
-              L'accès aux documents ACD et plans cadastraux nécessite un code d'accès unique.
-            </p>
+          // Locked State - Enhanced Glassmorphism Design
+          <div className="relative overflow-hidden rounded-2xl">
+            {/* Glassmorphism Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-green-500/5 to-amber-500/5" />
+            <div className="absolute inset-0 backdrop-blur-xl bg-black/30" />
+            
+            {/* Decorative Elements */}
+            <div className="absolute -top-20 -right-20 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl" />
+            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-green-500/10 rounded-full blur-3xl" />
+            
+            <div className="relative p-6 text-center">
+              {/* Icon with Animation */}
+              <div className="relative w-20 h-20 mx-auto mb-5">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-400/20 to-amber-600/20 rounded-2xl animate-pulse" />
+                <div className="absolute inset-1 bg-black/40 rounded-xl backdrop-blur-sm flex items-center justify-center">
+                  <Lock className="w-8 h-8 text-amber-400" />
+                </div>
+              </div>
+              
+              {/* Title - Playfair Display */}
+              <h4 className="font-playfair text-xl font-bold bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 bg-clip-text text-transparent mb-2">
+                Documents Officiels Sécurisés
+              </h4>
+              
+              {/* Description - Montserrat */}
+              <p className="font-montserrat text-gray-300 text-sm mb-6 max-w-xs mx-auto">
+                L'accès aux documents ACD et plans cadastraux nécessite un code d'accès unique.
+              </p>
 
-            <div className="flex gap-2 max-w-xs mx-auto">
-              <Input
-                value={accessCode}
-                onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-                placeholder="CODE D'ACCÈS"
-                className="input-dark text-center font-mono tracking-widest"
-                maxLength={8}
-                onKeyPress={(e) => e.key === 'Enter' && verifyCode()}
-                data-testid="document-access-code"
-              />
-              <Button 
-                onClick={verifyCode}
-                disabled={verifying}
-                className="btn-primary px-4"
-                data-testid="verify-code-btn"
-              >
-                {verifying ? (
-                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Unlock className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
+              {/* Code Input Section */}
+              {!showRequestForm ? (
+                <div className="space-y-4">
+                  <div className="flex gap-2 max-w-xs mx-auto">
+                    <Input
+                      value={accessCode}
+                      onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                      placeholder="CODE D'ACCÈS"
+                      className="bg-white/5 border-white/20 text-white text-center font-mono tracking-[0.3em] placeholder:text-gray-500 focus:border-amber-500/50 focus:ring-amber-500/20"
+                      maxLength={8}
+                      onKeyPress={(e) => e.key === 'Enter' && verifyCode()}
+                      data-testid="document-access-code"
+                    />
+                    <Button 
+                      onClick={verifyCode}
+                      disabled={verifying}
+                      className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold px-5 shadow-lg shadow-amber-500/20"
+                      data-testid="verify-code-btn"
+                    >
+                      {verifying ? (
+                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Unlock className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
 
-            <p className="text-gray-500 text-xs mt-4">
-              Pas de code ? Contactez-nous pour demander l'accès.
-            </p>
+                  {/* Request Code Button */}
+                  <div className="pt-2">
+                    <button 
+                      onClick={() => setShowRequestForm(true)}
+                      className="group inline-flex items-center gap-2 text-gray-400 hover:text-amber-400 text-sm font-montserrat transition-all"
+                      data-testid="request-code-link"
+                    >
+                      <Sparkles className="w-4 h-4 group-hover:animate-pulse" />
+                      <span>Pas de code ?</span>
+                      <span className="font-semibold text-amber-400 group-hover:underline">Demander un accès</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Request Access Form */
+                <div className="space-y-4 max-w-sm mx-auto">
+                  <div className="flex items-center justify-center gap-2 text-amber-400 mb-4">
+                    <User className="w-5 h-5" />
+                    <span className="font-playfair font-semibold">Demande d'accès</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Input
+                        value={requestForm.prenom}
+                        onChange={(e) => setRequestForm({ ...requestForm, prenom: e.target.value })}
+                        placeholder="Prénom"
+                        className="bg-white/5 border-white/20 text-white placeholder:text-gray-500 focus:border-green-500/50"
+                        data-testid="request-prenom"
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        value={requestForm.nom}
+                        onChange={(e) => setRequestForm({ ...requestForm, nom: e.target.value })}
+                        placeholder="Nom"
+                        className="bg-white/5 border-white/20 text-white placeholder:text-gray-500 focus:border-green-500/50"
+                        data-testid="request-nom"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="relative">
+                    <Input
+                      value={requestForm.whatsapp}
+                      onChange={(e) => setRequestForm({ ...requestForm, whatsapp: e.target.value })}
+                      placeholder="+225 07 00 00 00 00"
+                      className="bg-white/5 border-white/20 text-white placeholder:text-gray-500 focus:border-green-500/50 pl-10"
+                      data-testid="request-whatsapp"
+                    />
+                    <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                  </div>
+                  
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowRequestForm(false)}
+                      className="flex-1 border-white/20 text-gray-300 hover:bg-white/5"
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      onClick={handleCodeRequest}
+                      disabled={submittingRequest}
+                      className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-semibold shadow-lg shadow-green-500/20"
+                      data-testid="submit-request-btn"
+                    >
+                      {submittingRequest ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Envoyer
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  <p className="text-gray-500 text-xs font-montserrat">
+                    Un conseiller vous contactera sous peu avec votre code d'accès personnel.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           // Unlocked State - Different display based on profile
