@@ -7,6 +7,20 @@ Développer l'application web Songon Extension (anciennement extension de onegre
 **URL** : https://songonextension.com
 **Email** : contact@songonextension.com
 
+## Système de Profils
+
+### PROSPECT (👤)
+- Accès limité à **3 jours maximum**
+- Documents avec **filigrane de sécurité**
+- Pas d'accès à la surveillance vidéo
+- Message d'expiration incitant à l'achat
+
+### PROPRIÉTAIRE (👑)  
+- Accès **permanent** (validité illimitée)
+- Documents **originaux sans filigrane**
+- Accès **surveillance vidéo** en direct (si activé)
+- Caméras ENSTER/EseeCloud supportées (HLS, RTSP)
+
 ## Choix Utilisateur
 - Authentification: JWT simple (admin/admin via .env)
 - Thème: Mode "Nature" + **Thème Clair Prestigieux pour Masterplan**
