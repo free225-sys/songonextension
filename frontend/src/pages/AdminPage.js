@@ -1280,38 +1280,122 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
 
       {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="bg-[#0d1410] border-white/10">
+        <DialogContent className="bg-[#0d1410] border-white/10 max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-white font-playfair">Générer un code d'accès</DialogTitle>
-            <DialogDescription className="text-gray-400 font-montserrat">Créez un code temporaire pour un client</DialogDescription>
+            <DialogDescription className="text-gray-400 font-montserrat">Créez un code pour un PROSPECT ou un PROPRIÉTAIRE</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Profile Type Selector */}
             <div>
-              <label className="text-gray-400 text-sm mb-2 block font-montserrat">Nom du client *</label>
-              <Input value={newCode.client_name} onChange={(e) => setNewCode({ ...newCode, client_name: e.target.value })} className="bg-white/5 border-white/10 text-white" placeholder="Jean Dupont" data-testid="client-name-input" />
+              <label className="text-gray-400 text-sm mb-2 block font-montserrat">Type de profil *</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setNewCode({ ...newCode, profile_type: 'PROSPECT', camera_enabled: false, video_url: '' })}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    newCode.profile_type === 'PROSPECT'
+                      ? 'border-blue-500 bg-blue-500/10'
+                      : 'border-white/10 bg-white/5 hover:border-white/20'
+                  }`}
+                  data-testid="profile-prospect"
+                >
+                  <div className="text-2xl mb-2">👤</div>
+                  <div className="font-playfair text-white font-medium">Prospect</div>
+                  <div className="text-gray-500 text-xs mt-1">Documents avec filigrane<br/>Expire après 3 jours</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewCode({ ...newCode, profile_type: 'PROPRIETAIRE' })}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    newCode.profile_type === 'PROPRIETAIRE'
+                      ? 'border-amber-500 bg-amber-500/10'
+                      : 'border-white/10 bg-white/5 hover:border-white/20'
+                  }`}
+                  data-testid="profile-proprietaire"
+                >
+                  <div className="text-2xl mb-2">👑</div>
+                  <div className="font-playfair text-white font-medium">Propriétaire</div>
+                  <div className="text-gray-500 text-xs mt-1">Documents originaux<br/>Accès permanent + Caméra</div>
+                </button>
+              </div>
             </div>
-            <div>
-              <label className="text-gray-400 text-sm mb-2 block font-montserrat">Email *</label>
-              <Input value={newCode.client_email} onChange={(e) => setNewCode({ ...newCode, client_email: e.target.value })} className="bg-white/5 border-white/10 text-white" placeholder="jean@exemple.com" data-testid="client-email-input" />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-gray-400 text-sm mb-2 block font-montserrat">Nom du client *</label>
+                <Input value={newCode.client_name} onChange={(e) => setNewCode({ ...newCode, client_name: e.target.value })} className="bg-white/5 border-white/10 text-white" placeholder="Jean Dupont" data-testid="client-name-input" />
+              </div>
+              <div>
+                <label className="text-gray-400 text-sm mb-2 block font-montserrat">Email *</label>
+                <Input value={newCode.client_email} onChange={(e) => setNewCode({ ...newCode, client_email: e.target.value })} className="bg-white/5 border-white/10 text-white" placeholder="jean@exemple.com" data-testid="client-email-input" />
+              </div>
             </div>
-            <div>
-              <label className="text-gray-400 text-sm mb-2 block font-montserrat">Durée de validité</label>
-              <Select value={String(newCode.expires_hours)} onValueChange={(v) => setNewCode({ ...newCode, expires_hours: parseInt(v) })}>
-                <SelectTrigger className="bg-white/5 border-white/10 text-white" data-testid="duration-select">
-                  <SelectValue placeholder="Sélectionner la durée" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#0d1410] border-white/10">
-                  <SelectItem value="24">24 heures</SelectItem>
-                  <SelectItem value="72">72 heures (3 jours)</SelectItem>
-                  <SelectItem value="168">1 semaine</SelectItem>
-                  <SelectItem value="720">1 mois</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
+            {/* Prospect-specific: Duration */}
+            {newCode.profile_type === 'PROSPECT' && (
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                <label className="text-blue-400 text-sm mb-2 block font-montserrat flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Durée de validité (max 3 jours)
+                </label>
+                <Select value={String(newCode.expires_hours)} onValueChange={(v) => setNewCode({ ...newCode, expires_hours: parseInt(v) })}>
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white" data-testid="duration-select">
+                    <SelectValue placeholder="Sélectionner la durée" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#0d1410] border-white/10">
+                    <SelectItem value="24">24 heures</SelectItem>
+                    <SelectItem value="48">48 heures</SelectItem>
+                    <SelectItem value="72">72 heures (3 jours max)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Propriétaire-specific: Video settings */}
+            {newCode.profile_type === 'PROPRIETAIRE' && (
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-amber-400 text-sm font-montserrat font-medium">Accès surveillance vidéo</label>
+                    <p className="text-gray-500 text-xs">Activer l'accès aux caméras ENSTER/EseeCloud</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setNewCode({ ...newCode, camera_enabled: !newCode.camera_enabled })}
+                    className={`w-12 h-6 rounded-full transition-all ${
+                      newCode.camera_enabled ? 'bg-green-500' : 'bg-gray-600'
+                    }`}
+                    data-testid="camera-toggle"
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                      newCode.camera_enabled ? 'translate-x-6' : 'translate-x-0.5'
+                    }`} />
+                  </button>
+                </div>
+                
+                {newCode.camera_enabled && (
+                  <div>
+                    <label className="text-amber-400 text-sm mb-2 block font-montserrat">URL du flux vidéo</label>
+                    <Input 
+                      value={newCode.video_url} 
+                      onChange={(e) => setNewCode({ ...newCode, video_url: e.target.value })} 
+                      className="bg-white/5 border-white/10 text-white font-mono text-sm" 
+                      placeholder="rtsp://camera.local:554/stream ou http://..."
+                      data-testid="video-url-input"
+                    />
+                    <p className="text-gray-600 text-xs mt-1">Formats supportés: HLS (.m3u8), RTSP, HTTP stream</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Annuler</Button>
-            <Button onClick={handleCreateCode} className="bg-gradient-to-r from-green-500 to-green-600 text-black" data-testid="generate-code-btn"><Key className="w-4 h-4 mr-2" />Générer</Button>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="border-white/10">Annuler</Button>
+            <Button onClick={handleCreateCode} className="bg-gradient-to-r from-green-500 to-green-600 text-black" data-testid="generate-code-btn">
+              <Key className="w-4 h-4 mr-2" />
+              Générer code {newCode.profile_type}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
