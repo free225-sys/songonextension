@@ -1154,12 +1154,13 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
             </thead>
             <tbody className="divide-y divide-white/5">
               {loading ? (
-                <tr><td colSpan={7} className="text-center py-8 text-gray-500">Chargement...</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-gray-500">Chargement...</td></tr>
               ) : codes.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-8 text-gray-500">Aucun code d'accès</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-gray-500">Aucun code d'accès</td></tr>
               ) : (
                 codes.map((code) => {
                   const usage = getCodeUsage(code.code);
+                  const profileType = code.profile_type || 'PROSPECT';
                   return (
                     <tr key={code.id} className="hover:bg-white/5 transition-colors">
                       <td className="p-4">
@@ -1168,8 +1169,34 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
                           <button onClick={() => copyCode(code.code)} className="text-gray-500 hover:text-white"><Copy className="w-4 h-4" /></button>
                         </div>
                       </td>
-                      <td className="p-4 font-montserrat text-white font-medium">{code.client_name}</td>
-                      <td className="p-4 font-montserrat text-gray-400 text-sm">{code.client_email}</td>
+                      <td className="p-4">
+                        <Badge className={`${
+                          profileType === 'PROPRIETAIRE' 
+                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' 
+                            : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                        }`}>
+                          {profileType === 'PROPRIETAIRE' ? '👑 Propriétaire' : '👤 Prospect'}
+                        </Badge>
+                      </td>
+                      <td className="p-4">
+                        <div className="font-montserrat text-white font-medium">{code.client_name}</div>
+                        <div className="font-montserrat text-gray-500 text-xs">{code.client_email}</div>
+                      </td>
+                      <td className="p-4">
+                        {profileType === 'PROPRIETAIRE' ? (
+                          code.camera_enabled ? (
+                            <Badge className="bg-green-500/20 text-green-400 border border-green-500/30">
+                              <Eye className="w-3 h-3 mr-1" /> Activé
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-gray-500/20 text-gray-500 border border-gray-500/30">
+                              <EyeOff className="w-3 h-3 mr-1" /> Désactivé
+                            </Badge>
+                          )
+                        ) : (
+                          <span className="text-gray-600 text-xs">—</span>
+                        )}
+                      </td>
                       <td className="p-4">
                         {usage.count > 0 ? (
                           <button 
@@ -1183,7 +1210,13 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
                           <span className="text-gray-500 text-sm">Aucun</span>
                         )}
                       </td>
-                      <td className="p-4 font-montserrat text-gray-400 text-sm">{new Date(code.expires_at).toLocaleDateString('fr-FR')}</td>
+                      <td className="p-4 font-montserrat text-gray-400 text-sm">
+                        {profileType === 'PROPRIETAIRE' ? (
+                          <span className="text-amber-400 text-xs">∞ Permanent</span>
+                        ) : (
+                          new Date(code.expires_at).toLocaleDateString('fr-FR')
+                        )}
+                      </td>
                       <td className="p-4">
                         {!code.active ? (
                           <Badge className="bg-red-500/20 text-red-400 border border-red-500/30">Révoqué</Badge>
@@ -1197,6 +1230,7 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
                         {code.active && !code.is_expired && (
                           <Button size="sm" variant="ghost" onClick={() => handleRevokeCode(code.id)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
                             <EyeOff className="w-4 h-4" />
+                          </Button>
                           </Button>
                         )}
                       </td>
