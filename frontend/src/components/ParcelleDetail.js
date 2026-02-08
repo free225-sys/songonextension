@@ -287,11 +287,37 @@ const DocumentAccessSection = ({ parcelle, t, onParcelleChange }) => {
         toast.success(`Bienvenue ${response.data.client_name}`, {
           description: `Profil: ${profileLabel}`
         });
+        
+        // For PROPRIETAIRE, check if they have multiple parcelles
+        if (response.data.profile_type === 'PROPRIETAIRE') {
+          try {
+            const ownerResponse = await axios.post(`${API}/documents/get-owner-parcelles`,
+              new URLSearchParams({ code: accessCode.toUpperCase() })
+            );
+            
+            if (ownerResponse.data.is_multi_parcelle) {
+              setOwnerParcelles(ownerResponse.data.parcelles);
+              setIsMultiParcelle(true);
+              toast.info(`Vous avez accès à ${ownerResponse.data.parcelle_count} propriétés`, {
+                description: 'Utilisez la navigation pour consulter vos autres parcelles'
+              });
+            }
+          } catch (err) {
+            console.error('Error fetching owner parcelles:', err);
+          }
+        }
       }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Code invalide ou expiré');
     }
     setVerifying(false);
+  };
+
+  // Handle parcelle switch for multi-parcelle owners
+  const handleParcelleSwitch = (newParcelleId) => {
+    if (newParcelleId !== parcelle.id && onParcelleChange) {
+      onParcelleChange(newParcelleId);
+    }
   };
 
   const handleSurveillanceAccess = async () => {
