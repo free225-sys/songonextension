@@ -1830,15 +1830,24 @@ export default function AdminPage() {
     setLastCheckTime(new Date().toISOString());
   }, []);
 
+  // Clear request count when viewing requests tab
+  const handleRequestsRead = useCallback(() => {
+    // Request count will be refreshed when tab data loads
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchData();
       fetchNotifications();
+      fetchRequestsCount();
       // Poll for notifications every 30 seconds
-      const interval = setInterval(fetchNotifications, 30000);
+      const interval = setInterval(() => {
+        fetchNotifications();
+        fetchRequestsCount();
+      }, 30000);
       return () => clearInterval(interval);
     }
-  }, [isAuthenticated, fetchData, fetchNotifications]);
+  }, [isAuthenticated, fetchData, fetchNotifications, fetchRequestsCount]);
 
   if (authLoading || !isAuthenticated) {
     return (
@@ -1850,13 +1859,14 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#050a07] via-[#071210] to-[#050a07] flex" data-testid="admin-page">
-      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} notificationCount={notificationCount} />
+      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} notificationCount={notificationCount} requestCount={requestCount} />
       
       <main className="flex-1 p-6 lg:p-8 overflow-auto">
         <AnimatePresence mode="wait">
           {activeTab === 'dashboard' && <DashboardTab key="dashboard" stats={stats} parcelles={parcelles} />}
           {activeTab === 'parcelles' && <ParcellesTab key="parcelles" parcelles={parcelles} onUpdate={fetchData} onDelete={fetchData} getAuthHeaders={getAuthHeaders} />}
           {activeTab === 'access' && <AccessCodesTab key="access" getAuthHeaders={getAuthHeaders} parcelles={parcelles} />}
+          {activeTab === 'requests' && <CodeRequestsTab key="requests" getAuthHeaders={getAuthHeaders} onRequestRead={handleRequestsRead} />}
           {activeTab === 'logs' && <DownloadLogsTab key="logs" getAuthHeaders={getAuthHeaders} onNotificationRead={handleNotificationRead} />}
           {activeTab === 'kmz' && <KMZTab key="kmz" onImport={fetchData} getAuthHeaders={getAuthHeaders} />}
         </AnimatePresence>
