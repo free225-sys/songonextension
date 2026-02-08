@@ -20,6 +20,7 @@ Développer l'application web Songon Extension (anciennement extension de onegre
 - Documents **originaux sans filigrane**
 - Accès **surveillance vidéo** en direct (si activé)
 - Caméras ENSTER/EseeCloud supportées (HLS, RTSP)
+- **Multi-parcelles** : Un code peut être lié à plusieurs propriétés avec navigation intégrée
 
 ## Choix Utilisateur
 - Authentification: JWT simple (admin/admin via .env)
