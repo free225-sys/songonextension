@@ -611,3 +611,109 @@ div[style*="position: fixed"][style*="bottom"][style*="right"] > a[href*="emerge
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+
+/* ==================== VIDEO.JS CUSTOM STYLES ==================== */
+
+/* Video.js Theme - Forest/Premium */
+.video-js {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.video-js .vjs-big-play-button {
+  display: none !important;
+}
+
+.video-js .vjs-control-bar {
+  display: none !important;
+}
+
+.vjs-theme-forest {
+  --vjs-theme-forest--primary: #22c55e;
+  --vjs-theme-forest--secondary: #f59e0b;
+}
+
+/* Custom video container */
+.video-container {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #000;
+}
+
+.video-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Video overlay controls */
+.video-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+}
+
+/* Immersive Modal Dialog Overrides */
+[data-testid="parcelle-modal"] {
+  max-height: 90vh !important;
+  overflow: hidden !important;
+}
+
+[data-testid="parcelle-modal"] > div {
+  max-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Dialog content scrollable area */
+.dialog-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 197, 94, 0.3) transparent;
+}
+
+.dialog-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dialog-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dialog-scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(34, 197, 94, 0.3);
+  border-radius: 3px;
+}
+
+.dialog-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.5);
+}
+
+/* Enhanced glassmorphism for modal */
+.glass-premium {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Decorative blur circles */
+.blur-circle {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.blur-circle-amber {
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.blur-circle-green {
+  background: rgba(34, 197, 94, 0.15);
+}
