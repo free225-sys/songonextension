@@ -131,14 +131,21 @@ class ContactInfo(BaseModel):
     telephone: str
     email: str
 
+class ParcelleConfig(BaseModel):
+    """Configuration spécifique par parcelle pour un code PROPRIETAIRE"""
+    parcelle_id: str
+    video_url: Optional[str] = None
+    camera_enabled: bool = False
+
 class AccessCodeCreate(BaseModel):
     client_name: str
     client_email: str
     parcelle_ids: List[str] = []  # Empty = all parcelles
     expires_hours: int = 72  # Default 72 hours (only for PROSPECT)
     profile_type: str = "PROSPECT"  # PROSPECT or PROPRIETAIRE
-    video_url: Optional[str] = None  # Camera stream URL (for PROPRIETAIRE)
-    camera_enabled: bool = False  # Enable camera access
+    video_url: Optional[str] = None  # Global camera URL (legacy, for single parcelle)
+    camera_enabled: bool = False  # Global camera access (legacy)
+    parcelle_configs: Optional[List[ParcelleConfig]] = None  # Per-parcelle config for PROPRIETAIRE
 
 class AccessCodeVerify(BaseModel):
     code: str
