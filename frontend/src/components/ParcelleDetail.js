@@ -814,7 +814,7 @@ const DocumentAccessSection = ({ parcelle, t, onParcelleChange }) => {
   );
 };
 
-export const ParcelleDetail = ({ parcelle, onClose, isOpen }) => {
+export const ParcelleDetail = ({ parcelle, onClose, isOpen, onParcelleChange }) => {
   const { t } = useLanguage();
 
   if (!parcelle) return null;
