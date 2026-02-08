@@ -153,12 +153,14 @@ Tunnel d'accès:
 - ✅ Multi-documents par parcelle
 
 ### P1 (Important)
+- Intégrer un vrai lecteur vidéo (Video.js) pour les flux HLS/RTSP
 - Vérifier un domaine personnalisé sur Resend pour envoyer à tous les destinataires
 
 ### P2 (Nice to have)
 - QR Code sur documents pour vérification
 - Migration vers MongoDB/PostgreSQL
 - Notifications push navigateur
+- Refactoring AdminPage.js et ParcelleDetail.js (fichiers volumineux)
 
 ## Credentials Test
 - **Admin**: `admin` / `admin`
