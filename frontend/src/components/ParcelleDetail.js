@@ -235,6 +235,48 @@ const DocumentAccessSection = ({ parcelle, t, onParcelleChange }) => {
   // Multi-parcelle state
   const [ownerParcelles, setOwnerParcelles] = useState([]);
   const [isMultiParcelle, setIsMultiParcelle] = useState(false);
+  // Request access form state
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [submittingRequest, setSubmittingRequest] = useState(false);
+  const [requestForm, setRequestForm] = useState({
+    nom: '',
+    prenom: '',
+    whatsapp: ''
+  });
+
+  // Handle code access request submission
+  const handleCodeRequest = async () => {
+    if (!requestForm.nom.trim() || !requestForm.prenom.trim() || !requestForm.whatsapp.trim()) {
+      toast.error('Veuillez remplir tous les champs');
+      return;
+    }
+
+    setSubmittingRequest(true);
+    try {
+      await axios.post(`${API}/code-requests`, {
+        nom: requestForm.nom,
+        prenom: requestForm.prenom,
+        whatsapp: requestForm.whatsapp,
+        parcelle_id: parcelle.id,
+        parcelle_nom: parcelle.nom
+      });
+      
+      toast.success(
+        <div className="space-y-1">
+          <p className="font-semibold">Merci {requestForm.prenom} !</p>
+          <p className="text-sm text-gray-300">Votre demande a été transmise.</p>
+          <p className="text-xs text-gray-400">Un conseiller vous contactera sous peu avec votre code d'accès personnel.</p>
+        </div>,
+        { duration: 8000 }
+      );
+      
+      setShowRequestForm(false);
+      setRequestForm({ nom: '', prenom: '', whatsapp: '' });
+    } catch (error) {
+      toast.error('Erreur lors de l\'envoi de votre demande');
+    }
+    setSubmittingRequest(false);
+  };
 
   // Fetch available documents for this parcelle
   useEffect(() => {
