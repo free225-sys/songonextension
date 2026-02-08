@@ -1677,6 +1677,243 @@ const DownloadLogsTab = ({ getAuthHeaders, onNotificationRead }) => {
   );
 };
 
+// Code Requests Tab - Demandes d'accès en attente
+const CodeRequestsTab = ({ getAuthHeaders, onRequestRead }) => {
+  const [requests, setRequests] = useState([]);
+  const [stats, setStats] = useState({ total: 0, pending: 0, contacted: 0, completed: 0 });
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+  const [updatingId, setUpdatingId] = useState(null);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const statusParam = filter !== 'all' ? `?status=${filter}` : '';
+      const response = await axios.get(`${API}/admin/code-requests${statusParam}`, { headers: getAuthHeaders() });
+      setRequests(response.data.requests || []);
+      setStats(response.data.stats || { total: 0, pending: 0, contacted: 0, completed: 0 });
+      if (onRequestRead) onRequestRead();
+    } catch (error) {
+      console.error('Failed to fetch requests:', error);
+    }
+    setLoading(false);
+  }, [getAuthHeaders, filter, onRequestRead]);
+
+  useEffect(() => {
+    fetchData();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  const handleUpdateStatus = async (requestId, newStatus) => {
+    setUpdatingId(requestId);
+    try {
+      await axios.put(
+        `${API}/admin/code-requests/${requestId}`,
+        new URLSearchParams({ status: newStatus, notes: '' }),
+        { headers: getAuthHeaders() }
+      );
+      toast.success(`Statut mis à jour: ${newStatus}`);
+      fetchData();
+    } catch (error) {
+      toast.error('Erreur lors de la mise à jour');
+    }
+    setUpdatingId(null);
+  };
+
+  const handleDelete = async (requestId) => {
+    try {
+      await axios.delete(`${API}/admin/code-requests/${requestId}`, { headers: getAuthHeaders() });
+      toast.success('Demande supprimée');
+      fetchData();
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const config = {
+      pending: { label: 'En attente', className: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: Clock },
+      contacted: { label: 'Contacté', className: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Phone },
+      completed: { label: 'Complété', className: 'bg-green-500/20 text-green-400 border-green-500/30', icon: CheckCircle },
+      rejected: { label: 'Rejeté', className: 'bg-red-500/20 text-red-400 border-red-500/30', icon: AlertCircle }
+    };
+    const { label, className, icon: Icon } = config[status] || config.pending;
+    return (
+      <Badge className={`${className} border flex items-center gap-1`}>
+        <Icon className="w-3 h-3" />
+        {label}
+      </Badge>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+        <h1 className="font-playfair text-3xl font-bold text-white mb-2">Demandes d'accès</h1>
+        <p className="font-montserrat text-gray-400">Gérez les demandes de codes d'accès des visiteurs</p>
+      </motion.div>
+
+      {/* Stats Cards */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+          <div className="text-2xl font-bold text-white">{stats.total}</div>
+          <div className="text-gray-500 text-sm">Total</div>
+        </div>
+        <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4">
+          <div className="text-2xl font-bold text-amber-400">{stats.pending}</div>
+          <div className="text-amber-400/70 text-sm">En attente</div>
+        </div>
+        <div className="rounded-xl bg-blue-500/10 border border-blue-500/20 p-4">
+          <div className="text-2xl font-bold text-blue-400">{stats.contacted}</div>
+          <div className="text-blue-400/70 text-sm">Contactés</div>
+        </div>
+        <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4">
+          <div className="text-2xl font-bold text-green-400">{stats.completed}</div>
+          <div className="text-green-400/70 text-sm">Complétés</div>
+        </div>
+      </motion.div>
+
+      {/* Filter Tabs */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2 flex-wrap">
+        {['all', 'pending', 'contacted', 'completed'].map((status) => (
+          <button
+            key={status}
+            onClick={() => setFilter(status)}
+            className={`px-4 py-2 rounded-lg font-montserrat text-sm transition-all ${
+              filter === status
+                ? 'bg-green-500 text-black font-semibold'
+                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+            }`}
+          >
+            {status === 'all' ? 'Toutes' : status === 'pending' ? 'En attente' : status === 'contacted' ? 'Contactés' : 'Complétés'}
+          </button>
+        ))}
+      </motion.div>
+
+      {/* Requests List */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 overflow-hidden">
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">
+            <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            Chargement des demandes...
+          </div>
+        ) : requests.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
+            <p className="font-montserrat text-lg">Aucune demande {filter !== 'all' ? `"${filter}"` : ''}</p>
+            <p className="text-sm mt-1">Les nouvelles demandes apparaîtront ici</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {requests.map((request, index) => (
+              <motion.div
+                key={request.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className={`p-5 hover:bg-white/5 transition-colors ${
+                  request.status === 'pending' ? 'bg-amber-500/5' : ''
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  {/* Avatar */}
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    request.status === 'pending' ? 'bg-amber-500/20' : 
+                    request.status === 'contacted' ? 'bg-blue-500/20' : 'bg-green-500/20'
+                  }`}>
+                    <Users className={`w-6 h-6 ${
+                      request.status === 'pending' ? 'text-amber-400' : 
+                      request.status === 'contacted' ? 'text-blue-400' : 'text-green-400'
+                    }`} />
+                  </div>
+                  
+                  {/* Details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-1">
+                      <h4 className="font-playfair text-lg font-semibold text-white">
+                        {request.prenom} {request.nom}
+                      </h4>
+                      {getStatusBadge(request.status)}
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-sm">
+                      <a 
+                        href={`https://wa.me/${request.whatsapp.replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-green-400 hover:text-green-300 transition-colors"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        {request.whatsapp}
+                      </a>
+                      <span className="text-gray-500">•</span>
+                      <span className="text-gray-400">
+                        Parcelle: <span className="text-white">{request.parcelle_nom || request.parcelle_id}</span>
+                      </span>
+                    </div>
+                    
+                    <p className="text-gray-500 text-xs mt-2">
+                      {request.relative_time || new Date(request.created_at).toLocaleString('fr-FR')}
+                    </p>
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    {request.status === 'pending' && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleUpdateStatus(request.id, 'contacted')}
+                        disabled={updatingId === request.id}
+                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                      >
+                        {updatingId === request.id ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <Phone className="w-4 h-4 mr-1" />
+                            Contacté
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    {request.status === 'contacted' && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleUpdateStatus(request.id, 'completed')}
+                        disabled={updatingId === request.id}
+                        className="bg-green-500 hover:bg-green-600 text-black"
+                      >
+                        {updatingId === request.id ? (
+                          <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Complété
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDelete(request.id)}
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+};
+
 // KMZ Import Tab
 const KMZTab = ({ onImport, getAuthHeaders }) => {
   const [dragOver, setDragOver] = useState(false);
