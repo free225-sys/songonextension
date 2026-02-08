@@ -180,8 +180,42 @@ const VideoPlayer = ({ videoUrl, onClose }) => {
   );
 };
 
+// Multi-Parcelle Navigation for PROPRIETAIRE
+const MultiParcelleNav = ({ parcelles, currentParcelleId, onSelectParcelle }) => {
+  if (!parcelles || parcelles.length <= 1) return null;
+  
+  return (
+    <div className="mb-4 p-3 bg-gradient-to-r from-amber-500/10 to-amber-600/5 rounded-xl border border-amber-500/20">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-amber-400 text-xs font-montserrat font-medium">
+          👑 Vos propriétés ({parcelles.length})
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {parcelles.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => onSelectParcelle(p.id)}
+            className={`px-3 py-2 rounded-lg text-xs font-montserrat transition-all ${
+              p.id === currentParcelleId
+                ? 'bg-amber-500 text-black font-semibold shadow-lg shadow-amber-500/30'
+                : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white border border-white/10'
+            }`}
+            data-testid={`parcelle-nav-${p.id}`}
+          >
+            <span className="block">{p.nom}</span>
+            <span className={`text-[10px] ${p.id === currentParcelleId ? 'text-black/60' : 'text-gray-500'}`}>
+              {p.superficie} {p.unite_superficie || 'ha'}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // Document Access Component with Code Verification and Profile Support
-const DocumentAccessSection = ({ parcelle, t }) => {
+const DocumentAccessSection = ({ parcelle, t, onParcelleChange }) => {
   const [accessCode, setAccessCode] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [clientInfo, setClientInfo] = useState(null);
@@ -197,6 +231,9 @@ const DocumentAccessSection = ({ parcelle, t }) => {
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [videoUrl, setVideoUrl] = useState(null);
   const [loadingVideo, setLoadingVideo] = useState(false);
+  // Multi-parcelle state
+  const [ownerParcelles, setOwnerParcelles] = useState([]);
+  const [isMultiParcelle, setIsMultiParcelle] = useState(false);
 
   // Fetch available documents for this parcelle
   useEffect(() => {
