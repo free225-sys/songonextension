@@ -56,6 +56,27 @@ Tunnel d'accès:
 
 ## Ce qui a été implémenté
 
+### Version 2.0.0 - Système de Profils & Surveillance Vidéo (08/02/2026)
+- **Gestion des profils**: PROSPECT (accès 3j, filigrane) et PROPRIETAIRE (permanent, originaux)
+- **Interface Admin améliorée**:
+  - Sélecteur visuel de profil (cartes interactives)
+  - Toggle pour activer l'accès caméra
+  - Champ URL flux vidéo (HLS/RTSP)
+  - Statistiques par profil (Prospects/Propriétaires)
+  - Colonne "Caméra" dans le tableau des codes
+- **Surveillance en Direct** (PROPRIETAIRE uniquement):
+  - Bouton "Surveillance en Direct" élégant (Playfair Display)
+  - Lecteur vidéo intégré avec contrôles Play/Pause/Mute
+  - Badge "LIVE" animé
+  - URL caméra sécurisée (non visible dans le code source)
+- **Logique d'affichage dynamique**:
+  - Vue PROSPECT: Documents avec filigrane, sans bouton surveillance
+  - Vue PROPRIETAIRE: Documents originaux, accès caméra si activé
+- **Endpoints API ajoutés**:
+  - `POST /api/documents/verify-profile` - Vérification profil avec infos complètes
+  - `POST /api/surveillance/access` - Accès sécurisé à la caméra (PROPRIETAIRE only)
+  - `PUT /api/admin/access-codes/{id}` - Mise à jour des paramètres vidéo
+
 ### Version 1.8.0 - Correction Formulaires Admin (04/02/2026)
 - **Correction z-index Select**: Les dropdowns des composants Select s'affichent maintenant correctement au-dessus des Dialog (z-[1200])
 - **Valeurs par défaut formulaire**: Ajout de valeurs par défaut pour éviter les erreurs undefined
