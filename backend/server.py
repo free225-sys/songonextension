@@ -853,15 +853,73 @@ async def verify_code_profile(
         if not is_expired:
             days_remaining = (expires_at - now).days
     
+    # Get per-parcelle config if PROPRIETAIRE
+    parcelle_configs = access_info.get("parcelle_configs", {})
+    parcelle_config = parcelle_configs.get(parcelle_id, {})
+    
+    # Determine camera access for this specific parcelle
+    camera_enabled = parcelle_config.get("camera_enabled", access_info.get("camera_enabled", False))
+    
     return {
         "valid": True,
         "profile_type": profile_type,
         "client_name": access_info["client_name"],
         "is_expired": is_expired,
         "days_remaining": days_remaining,
-        "camera_enabled": access_info.get("camera_enabled", False) if profile_type == "PROPRIETAIRE" else False,
-        "show_watermark": profile_type == "PROSPECT",  # PROSPECT sees watermark, PROPRIETAIRE doesn't
-        "can_access_surveillance": profile_type == "PROPRIETAIRE" and access_info.get("camera_enabled", False)
+        "camera_enabled": camera_enabled if profile_type == "PROPRIETAIRE" else False,
+        "show_watermark": profile_type == "PROSPECT",
+        "can_access_surveillance": profile_type == "PROPRIETAIRE" and camera_enabled,
+        "parcelle_id": parcelle_id
+    }
+
+@api_router.post("/documents/get-owner-parcelles")
+async def get_owner_parcelles(
+    code: str = Form(...)
+):
+    """Get all parcelles accessible by a PROPRIETAIRE code with their configurations"""
+    data = load_data()
+    codes = data.get("access_codes", [])
+    parcelles = data.get("parcelles", [])
+    
+    # Find the access code
+    access_code = None
+    for ac in codes:
+        if ac["code"] == code.upper() and ac["active"]:
+            expires_at = datetime.fromisoformat(ac["expires_at"])
+            if expires_at > datetime.now(timezone.utc):
+                access_code = ac
+                break
+    
+    if not access_code:
+        raise HTTPException(status_code=403, detail="Code d'accès invalide ou expiré")
+    
+    profile_type = access_code.get("profile_type", "PROSPECT")
+    parcelle_ids = access_code.get("parcelle_ids", [])
+    parcelle_configs = access_code.get("parcelle_configs", {})
+    
+    # Build list of accessible parcelles with their configs
+    accessible_parcelles = []
+    
+    for p in parcelles:
+        # Check if parcelle is accessible (empty list = all parcelles)
+        if not parcelle_ids or p["id"] in parcelle_ids:
+            config = parcelle_configs.get(p["id"], {})
+            accessible_parcelles.append({
+                "id": p["id"],
+                "nom": p.get("nom", p["id"]),
+                "type_projet": p.get("type_projet", ""),
+                "superficie": p.get("superficie", 0),
+                "statut": p.get("statut", "disponible"),
+                "camera_enabled": config.get("camera_enabled", access_code.get("camera_enabled", False)),
+                "has_video": bool(config.get("video_url") or access_code.get("video_url"))
+            })
+    
+    return {
+        "client_name": access_code["client_name"],
+        "profile_type": profile_type,
+        "parcelle_count": len(accessible_parcelles),
+        "parcelles": accessible_parcelles,
+        "is_multi_parcelle": len(accessible_parcelles) > 1
     }
 
 # ==================== AUTH ROUTES ====================
