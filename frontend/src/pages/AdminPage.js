@@ -1075,12 +1075,32 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
       toast.error('Nom et email requis');
       return;
     }
+    
+    // For PROPRIETAIRE, require at least one parcelle
+    if (newCode.profile_type === 'PROPRIETAIRE' && newCode.parcelle_ids.length === 0) {
+      toast.error('Sélectionnez au moins une parcelle pour un propriétaire');
+      return;
+    }
+    
+    // Build parcelle_configs for PROPRIETAIRE
+    let payload = { ...newCode };
+    if (newCode.profile_type === 'PROPRIETAIRE' && newCode.parcelle_configs) {
+      payload.parcelle_configs = Object.entries(newCode.parcelle_configs).map(([pid, config]) => ({
+        parcelle_id: pid,
+        video_url: config.video_url || '',
+        camera_enabled: config.camera_enabled || false
+      }));
+    }
+    
     try {
-      const response = await axios.post(`${API}/admin/access-codes`, newCode, { headers: getAuthHeaders() });
+      const response = await axios.post(`${API}/admin/access-codes`, payload, { headers: getAuthHeaders() });
       toast.success(
         <div>
           <p className="font-medium">Code {newCode.profile_type} généré</p>
           <p className="text-lg font-mono mt-1">{response.data.code}</p>
+          {response.data.parcelle_count > 1 && (
+            <p className="text-xs mt-1 text-gray-400">{response.data.parcelle_count} parcelles liées</p>
+          )}
         </div>, 
         { duration: 10000 }
       );
@@ -1092,7 +1112,8 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
         expires_hours: 72,
         profile_type: 'PROSPECT',
         video_url: '',
-        camera_enabled: false
+        camera_enabled: false,
+        parcelle_configs: {}
       });
       fetchData();
     } catch (error) {
