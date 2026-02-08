@@ -487,7 +487,7 @@ async def get_document_with_watermark(
     code: str,
     action: str = Query("preview", description="preview, download, or info")
 ):
-    """Get document with watermark (requires valid access code)"""
+    """Get document with or without watermark based on profile type"""
     access_info = verify_access_code(code, parcelle_id)
     
     if not access_info:
@@ -505,13 +505,15 @@ async def get_document_with_watermark(
         raise HTTPException(status_code=404, detail="Parcelle non trouvée")
     
     client_name = access_info["client_name"]
+    profile_type = access_info.get("profile_type", "PROSPECT")
+    apply_watermark = profile_type == "PROSPECT"  # PROPRIETAIRE gets original documents
     
     # Log the access
     log_download(
         code=code,
         client_name=client_name,
         parcelle_id=parcelle_id,
-        document_type=document_type,
+        document_type=f"{document_type}{'_original' if not apply_watermark else ''}",
         document_name=f"{document_type}_{parcelle_id}"
     )
     
@@ -528,6 +530,8 @@ async def get_document_with_watermark(
             "has_real_document": has_real_doc,
             "access_granted": True,
             "accessed_by": client_name,
+            "profile_type": profile_type,
+            "has_watermark": apply_watermark,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "download_url": f"/api/documents/{parcelle_id}/{document_type}?code={code}&action=download",
             "preview_url": f"/api/documents/{parcelle_id}/{document_type}?code={code}&action=preview"
@@ -549,32 +553,38 @@ async def get_document_with_watermark(
             doc_path = Path(doc_info.get("path", ""))
             
             if doc_path.exists():
-                # Read original PDF and add watermark
+                # Read original PDF
                 with open(doc_path, 'rb') as f:
                     original_pdf = f.read()
                 
-                try:
-                    pdf_content = add_watermark_to_pdf(original_pdf, client_name, code)
-                    filename = f"{document_type.upper()}_{parcelle.get('nom', parcelle_id).replace(' ', '_')}_watermarked.pdf"
-                except Exception as e:
-                    logger.error(f"Error adding watermark: {e}")
-                    # Fallback to placeholder if watermark fails
-                    if document_type == "acd":
-                        pdf_content = create_placeholder_acd_pdf(
-                            parcelle_nom=parcelle.get("nom", "Parcelle"),
-                            parcelle_ref=parcelle.get("reference_tf", "N/A"),
-                            client_name=client_name,
-                            access_code=code
-                        )
-                    else:
-                        pdf_content = create_placeholder_plan_pdf(
-                            parcelle_nom=parcelle.get("nom", "Parcelle"),
-                            parcelle_ref=parcelle.get("reference_tf", "N/A"),
-                            superficie=parcelle.get("superficie", 0),
-                            client_name=client_name,
-                            access_code=code
-                        )
-                    filename = f"{document_type.upper()}_{parcelle.get('nom', parcelle_id).replace(' ', '_')}.pdf"
+                if apply_watermark:
+                    # PROSPECT: Add watermark
+                    try:
+                        pdf_content = add_watermark_to_pdf(original_pdf, client_name, code)
+                        filename = f"{document_type.upper()}_{parcelle.get('nom', parcelle_id).replace(' ', '_')}_watermarked.pdf"
+                    except Exception as e:
+                        logger.error(f"Error adding watermark: {e}")
+                        # Fallback to placeholder if watermark fails
+                        if document_type == "acd":
+                            pdf_content = create_placeholder_acd_pdf(
+                                parcelle_nom=parcelle.get("nom", "Parcelle"),
+                                parcelle_ref=parcelle.get("reference_tf", "N/A"),
+                                client_name=client_name,
+                                access_code=code
+                            )
+                        else:
+                            pdf_content = create_placeholder_plan_pdf(
+                                parcelle_nom=parcelle.get("nom", "Parcelle"),
+                                parcelle_ref=parcelle.get("reference_tf", "N/A"),
+                                superficie=parcelle.get("superficie", 0),
+                                client_name=client_name,
+                                access_code=code
+                            )
+                        filename = f"{document_type.upper()}_{parcelle.get('nom', parcelle_id).replace(' ', '_')}.pdf"
+                else:
+                    # PROPRIETAIRE: Return original document without watermark
+                    pdf_content = original_pdf
+                    filename = f"{document_type.upper()}_{parcelle.get('nom', parcelle_id).replace(' ', '_')}_ORIGINAL.pdf"
             else:
                 raise HTTPException(status_code=404, detail="Fichier document non trouvé")
         else:
