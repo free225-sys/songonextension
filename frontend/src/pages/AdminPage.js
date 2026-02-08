@@ -1041,7 +1041,8 @@ const AccessCodesTab = ({ getAuthHeaders, parcelles }) => {
     expires_hours: 72,
     profile_type: 'PROSPECT',
     video_url: '',
-    camera_enabled: false
+    camera_enabled: false,
+    parcelle_configs: {}  // Per-parcelle configurations {parcelle_id: {video_url, camera_enabled}}
   });
 
   const fetchData = async () => {
