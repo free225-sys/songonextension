@@ -57,6 +57,19 @@ Tunnel d'accès:
 
 ## Ce qui a été implémenté
 
+### Version 2.1.0 - Multi-Parcelles pour Propriétaires (08/02/2026)
+- **Navigation Multi-Parcelles** : Les propriétaires avec plusieurs terrains peuvent naviguer entre leurs propriétés
+- **Interface de navigation** : Barre avec boutons pour chaque parcelle (nom + superficie)
+- **État actif visuel** : Parcelle sélectionnée en fond ambre, autres en fond transparent
+- **Chargement dynamique** : Les informations de la parcelle se mettent à jour sans recharger la page
+- **Persistance du code** : Le code d'accès reste valide lors du changement de parcelle
+- **Endpoints API ajoutés** :
+  - `POST /api/documents/get-owner-parcelles` - Liste des parcelles d'un propriétaire
+- **Composants Frontend** :
+  - `MultiParcelleNav` - Composant de navigation entre parcelles
+  - Prop `onParcelleChange` dans ParcelleDetail pour gérer le changement
+- **Tests** : 15/15 tests backend passés + validation UI complète
+
 ### Version 2.0.0 - Système de Profils & Surveillance Vidéo (08/02/2026)
 - **Gestion des profils**: PROSPECT (accès 3j, filigrane) et PROPRIETAIRE (permanent, originaux)
 - **Interface Admin améliorée**:
